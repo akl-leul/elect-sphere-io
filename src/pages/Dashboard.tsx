@@ -111,7 +111,7 @@ const Dashboard = () => {
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {isAdmin && (
             <>
-              <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+              <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate("/admin/elections")}>
                 <CardHeader>
                   <Settings className="h-8 w-8 text-primary mb-2" />
                   <CardTitle>Election Management</CardTitle>
@@ -122,7 +122,18 @@ const Dashboard = () => {
                 </CardContent>
               </Card>
 
-              <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+              <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate("/admin/positions")}>
+                <CardHeader>
+                  <Settings className="h-8 w-8 text-primary mb-2" />
+                  <CardTitle>Position Management</CardTitle>
+                  <CardDescription>Manage election positions</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Button className="w-full">Manage Positions</Button>
+                </CardContent>
+              </Card>
+
+              <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate("/admin/voters")}>
                 <CardHeader>
                   <Users className="h-8 w-8 text-primary mb-2" />
                   <CardTitle>Voter Management</CardTitle>
@@ -133,7 +144,7 @@ const Dashboard = () => {
                 </CardContent>
               </Card>
 
-              <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+              <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate("/admin/candidates")}>
                 <CardHeader>
                   <UserCheck className="h-8 w-8 text-primary mb-2" />
                   <CardTitle>Candidate Management</CardTitle>
@@ -143,10 +154,43 @@ const Dashboard = () => {
                   <Button className="w-full">Manage Candidates</Button>
                 </CardContent>
               </Card>
+
+              <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate("/admin/admins")}>
+                <CardHeader>
+                  <Settings className="h-8 w-8 text-primary mb-2" />
+                  <CardTitle>Admin Management</CardTitle>
+                  <CardDescription>Manage system administrators</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Button className="w-full">Manage Admins</Button>
+                </CardContent>
+              </Card>
+
+              <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate("/admin/results")}>
+                <CardHeader>
+                  <Vote className="h-8 w-8 text-primary mb-2" />
+                  <CardTitle>View Results</CardTitle>
+                  <CardDescription>Election results and analytics</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Button className="w-full">View Results</Button>
+                </CardContent>
+              </Card>
+
+              <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate("/admin/audit-logs")}>
+                <CardHeader>
+                  <Settings className="h-8 w-8 text-primary mb-2" />
+                  <CardTitle>Audit Logs</CardTitle>
+                  <CardDescription>System activity tracking</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Button className="w-full">View Logs</Button>
+                </CardContent>
+              </Card>
             </>
           )}
 
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate("/voter/vote")}>
             <CardHeader>
               <Vote className="h-8 w-8 text-primary mb-2" />
               <CardTitle>Cast Your Vote</CardTitle>
@@ -157,7 +201,7 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate("/candidate/register")}>
             <CardHeader>
               <UserCheck className="h-8 w-8 text-primary mb-2" />
               <CardTitle>Register as Candidate</CardTitle>
@@ -166,6 +210,19 @@ const Dashboard = () => {
             <CardContent>
               <Button className="w-full" variant="outline">
                 Apply Now
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate("/voter/profile")}>
+            <CardHeader>
+              <UserCheck className="h-8 w-8 text-primary mb-2" />
+              <CardTitle>My Profile</CardTitle>
+              <CardDescription>Manage your account settings</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button className="w-full" variant="outline">
+                View Profile
               </Button>
             </CardContent>
           </Card>

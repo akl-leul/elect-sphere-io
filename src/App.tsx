@@ -7,6 +7,16 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
+import Elections from "./pages/admin/Elections";
+import Voters from "./pages/admin/Voters";
+import Candidates from "./pages/admin/Candidates";
+import Admins from "./pages/admin/Admins";
+import Results from "./pages/admin/Results";
+import AuditLogs from "./pages/admin/AuditLogs";
+import Positions from "./pages/admin/Positions";
+import Profile from "./pages/voter/Profile";
+import Vote from "./pages/voter/Vote";
+import CandidateRegister from "./pages/candidate/Register";
 
 const queryClient = new QueryClient();
 
@@ -20,6 +30,16 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/admin/elections" element={<Elections />} />
+          <Route path="/admin/positions" element={<Positions />} />
+          <Route path="/admin/voters" element={<Voters />} />
+          <Route path="/admin/candidates" element={<Candidates />} />
+          <Route path="/admin/admins" element={<Admins />} />
+          <Route path="/admin/results" element={<Results />} />
+          <Route path="/admin/audit-logs" element={<AuditLogs />} />
+          <Route path="/voter/profile" element={<Profile />} />
+          <Route path="/voter/vote" element={<Vote />} />
+          <Route path="/candidate/register" element={<CandidateRegister />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
