@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Vote, Shield, Users, TrendingUp, CheckCircle2 } from "lucide-react";
-import heroImage from "@/assets/hero-election.jpg";
+import heroImage from "@/assets/hero-election.png";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -42,7 +42,7 @@ const Index = () => {
     <div className="min-h-screen">
       {/* Hero Section */}
       <section className="relative overflow-hidden bg-gradient-to-br from-background via-trust-light to-background">
-        <div className="absolute inset-0 opacity-10">
+        <div className="absolute inset-0 opacity-30">
           <img 
             src={heroImage} 
             alt="Election hero background" 
@@ -50,13 +50,13 @@ const Index = () => {
           />
         </div>
         
-        <div className="container mx-auto px-4 py-20 relative z-10">
+      <div className="mx-auto px-4 py-20 relative z-10 h-screen flex items-center justify-center">
           <div className="max-w-4xl mx-auto text-center">
-            <Badge className="mb-4 bg-primary/10 text-primary border-primary/20">
+            <Badge className="mb-4 bg-primary/10 text-white border-primary/20">
               Secure • Transparent • Democratic
             </Badge>
             
-            <h1 className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+            <h1 className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-primary to-accent bg-clip-text text-white">
               Your Voice, Your Vote
             </h1>
             
