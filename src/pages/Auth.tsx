@@ -126,11 +126,11 @@ const Auth = () => {
       <Card className="w-full max-w-md shadow-xl">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
-            <div className="p-3 bg-primary rounded-full">
-              <Vote className="h-8 w-8 text-primary-foreground" />
-            </div>
+            
+              <img src="https://sitedu.info/img/logo/primary-logo.webp" alt="" className="w-10 h-10 rounded"/>
+             
           </div>
-          <CardTitle className="text-2xl font-bold">Secure Election Portal</CardTitle>
+          <CardTitle className="text-2xl font-bold">SIT Election Portal</CardTitle>
           <CardDescription>Cast your vote with confidence</CardDescription>
         </CardHeader>
         <CardContent>

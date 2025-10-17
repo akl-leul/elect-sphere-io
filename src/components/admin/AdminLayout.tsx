@@ -54,9 +54,8 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
       <Sidebar variant="inset" collapsible="icon">
         <SidebarHeader>
           <div className="flex items-center gap-2 px-2 py-1.5">
-            <Vote className="h-5 w-5 text-primary" />
-            <span className="font-semibold">Admin</span>
-            <Badge className="ml-auto" variant="secondary">v1</Badge>
+            <img src="https://sitedu.info/img/logo/primary-logo.webp" alt="SIT Logo" className="w-10 h-10 rounded" />
+            <span className="font-semibold">Admin</span> 
           </div>
         </SidebarHeader>
         <SidebarContent>
@@ -85,7 +84,20 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
         <SidebarSeparator />
         <SidebarFooter>
           <div className="px-2">
-            <Button variant="outline" className="w-full" onClick={() => navigate("/dashboard")}>Back to App</Button>
+             
+             
+             <Button
+              variant="outline"
+              size="icon"
+              className="w-full hover:bg-red-600"
+              onClick={async () => {
+                await supabase.auth.signOut();
+                toast.success("Logged out successfully");
+                navigate("/auth");
+              }}
+            > <span className="">Logout</span>
+              <LogOut className="h-4 w-4" />
+            </Button>
           </div>
         </SidebarFooter>
         <SidebarRail />
@@ -99,6 +111,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
             <Button
               variant="outline"
               size="icon"
+              className="hover:bg-red-600"
               onClick={async () => {
                 await supabase.auth.signOut();
                 toast.success("Logged out successfully");
