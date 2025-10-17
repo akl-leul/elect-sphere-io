@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
+import AdminLayout from "@/components/admin/AdminLayout";
 
 interface AdminRouteProps {
   children: React.ReactNode;
@@ -57,7 +58,7 @@ const AdminRoute = ({ children }: AdminRouteProps) => {
     return null;
   }
 
-  return <>{children}</>;
+  return <AdminLayout>{children}</AdminLayout>;
 };
 
 export default AdminRoute;

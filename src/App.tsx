@@ -14,6 +14,8 @@ import Admins from "./pages/admin/Admins";
 import Results from "./pages/admin/Results";
 import AuditLogs from "./pages/admin/AuditLogs";
 import Positions from "./pages/admin/Positions";
+import Files from "./pages/admin/Files";
+import Analytics from "./pages/admin/Analytics";
 import Profile from "./pages/voter/Profile";
 import Vote from "./pages/voter/Vote";
 import CandidateRegister from "./pages/candidate/Register";
@@ -36,6 +38,8 @@ const App = () => (
           <Route path="/admin/candidates" element={<Candidates />} />
           <Route path="/admin/admins" element={<Admins />} />
           <Route path="/admin/results" element={<Results />} />
+          <Route path="/admin/files" element={<Files />} />
+          <Route path="/admin/analytics" element={<Analytics />} />
           <Route path="/admin/audit-logs" element={<AuditLogs />} />
           <Route path="/voter/profile" element={<Profile />} />
           <Route path="/voter/vote" element={<Vote />} />

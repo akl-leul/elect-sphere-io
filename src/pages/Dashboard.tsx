@@ -25,6 +25,12 @@ const Dashboard = () => {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
+  useEffect(() => {
+    if (isAdmin) {
+      navigate("/admin/analytics", { replace: true });
+    }
+  }, [isAdmin, navigate]);
+
   const checkAuth = async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -101,94 +107,15 @@ const Dashboard = () => {
       </nav>
 
       <div className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2">Dashboard</h1>
-          <p className="text-muted-foreground">
-            {isAdmin ? "Manage elections and oversee the voting process" : "Participate in elections and view results"}
-          </p>
-        </div>
+        {!isAdmin && (
+          <div className="mb-8">
+            <h1 className="text-4xl font-bold mb-2">Dashboard</h1>
+            <p className="text-muted-foreground">Participate in elections and view results</p>
+          </div>
+        )}
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {isAdmin && (
-            <>
-              <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate("/admin/elections")}>
-                <CardHeader>
-                  <Settings className="h-8 w-8 text-primary mb-2" />
-                  <CardTitle>Election Management</CardTitle>
-                  <CardDescription>Control active elections and settings</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Button className="w-full">Manage Elections</Button>
-                </CardContent>
-              </Card>
-
-              <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate("/admin/positions")}>
-                <CardHeader>
-                  <Settings className="h-8 w-8 text-primary mb-2" />
-                  <CardTitle>Position Management</CardTitle>
-                  <CardDescription>Manage election positions</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Button className="w-full">Manage Positions</Button>
-                </CardContent>
-              </Card>
-
-              <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate("/admin/voters")}>
-                <CardHeader>
-                  <Users className="h-8 w-8 text-primary mb-2" />
-                  <CardTitle>Voter Management</CardTitle>
-                  <CardDescription>View and approve registered voters</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Button className="w-full">Manage Voters</Button>
-                </CardContent>
-              </Card>
-
-              <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate("/admin/candidates")}>
-                <CardHeader>
-                  <UserCheck className="h-8 w-8 text-primary mb-2" />
-                  <CardTitle>Candidate Management</CardTitle>
-                  <CardDescription>Review and approve candidates</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Button className="w-full">Manage Candidates</Button>
-                </CardContent>
-              </Card>
-
-              <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate("/admin/admins")}>
-                <CardHeader>
-                  <Settings className="h-8 w-8 text-primary mb-2" />
-                  <CardTitle>Admin Management</CardTitle>
-                  <CardDescription>Manage system administrators</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Button className="w-full">Manage Admins</Button>
-                </CardContent>
-              </Card>
-
-              <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate("/admin/results")}>
-                <CardHeader>
-                  <Vote className="h-8 w-8 text-primary mb-2" />
-                  <CardTitle>View Results</CardTitle>
-                  <CardDescription>Election results and analytics</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Button className="w-full">View Results</Button>
-                </CardContent>
-              </Card>
-
-              <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate("/admin/audit-logs")}>
-                <CardHeader>
-                  <Settings className="h-8 w-8 text-primary mb-2" />
-                  <CardTitle>Audit Logs</CardTitle>
-                  <CardDescription>System activity tracking</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Button className="w-full">View Logs</Button>
-                </CardContent>
-              </Card>
-            </>
-          )}
+          {!isAdmin && (<></>)}
 
           <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate("/voter/vote")}>
             <CardHeader>

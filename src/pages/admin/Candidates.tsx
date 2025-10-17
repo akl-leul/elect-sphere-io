@@ -112,6 +112,7 @@ const Candidates = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>Candidate</TableHead>
+                <TableHead>Logo</TableHead>
                 <TableHead>Election</TableHead>
                 <TableHead>Position</TableHead>
                 <TableHead>Status</TableHead>
@@ -120,7 +121,7 @@ const Candidates = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredCandidates.map((candidate) => (
+                {filteredCandidates.map((candidate) => (
                 <TableRow key={candidate.id}>
                   <TableCell>
                     <div>
@@ -128,6 +129,17 @@ const Candidates = () => {
                       <div className="text-sm text-muted-foreground">{candidate.profiles?.email}</div>
                     </div>
                   </TableCell>
+                    <TableCell>
+                      {candidate.campaign_logo_url ? (
+                        <img
+                          src={candidate.campaign_logo_url}
+                          alt={`${candidate.profiles?.full_name} logo`}
+                          className="h-10 w-10 rounded object-cover border"
+                        />
+                      ) : (
+                        <div className="h-10 w-10 rounded border bg-muted" />
+                      )}
+                    </TableCell>
                   <TableCell>{candidate.elections?.title}</TableCell>
                   <TableCell>{candidate.positions?.title}</TableCell>
                   <TableCell>
@@ -195,6 +207,25 @@ const Candidates = () => {
                 <h3 className="font-semibold mb-1">Candidate Information</h3>
                 <p><strong>Name:</strong> {selectedCandidate.profiles?.full_name}</p>
                 <p><strong>Email:</strong> {selectedCandidate.profiles?.email}</p>
+              </div>
+              <div className="flex items-center gap-4">
+                {selectedCandidate.campaign_logo_url && (
+                  <img
+                    src={selectedCandidate.campaign_logo_url}
+                    alt="Campaign logo"
+                    className="h-20 w-20 rounded object-cover border"
+                  />
+                )}
+                {selectedCandidate.manifesto_url && (
+                  <a
+                    href={selectedCandidate.manifesto_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-primary underline"
+                  >
+                    View manifesto
+                  </a>
+                )}
               </div>
               <div>
                 <h3 className="font-semibold mb-1">Application Details</h3>

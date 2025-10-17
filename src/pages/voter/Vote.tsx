@@ -208,13 +208,32 @@ const Vote = () => {
                         >
                           <RadioGroupItem value={candidate.id} id={candidate.id} />
                           <Label htmlFor={candidate.id} className="flex-1 cursor-pointer">
-                            <div>
-                              <p className="font-semibold">{candidate.profiles?.full_name}</p>
-                              {candidate.slogan && (
-                                <p className="text-sm text-muted-foreground italic">
-                                  "{candidate.slogan}"
-                                </p>
+                            <div className="flex items-start gap-3">
+                              {candidate.campaign_logo_url && (
+                                <img
+                                  src={candidate.campaign_logo_url}
+                                  alt={`${candidate.profiles?.full_name} logo`}
+                                  className="h-12 w-12 rounded object-cover border"
+                                />
                               )}
+                              <div>
+                                <p className="font-semibold">{candidate.profiles?.full_name}</p>
+                                {candidate.slogan && (
+                                  <p className="text-sm text-muted-foreground italic">
+                                    "{candidate.slogan}"
+                                  </p>
+                                )}
+                                {candidate.manifesto_url && (
+                                  <a
+                                    href={candidate.manifesto_url}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="text-sm text-primary underline mt-1 inline-block"
+                                  >
+                                    View manifesto
+                                  </a>
+                                )}
+                              </div>
                             </div>
                           </Label>
                         </div>
