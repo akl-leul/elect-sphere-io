@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { CheckCircle, XCircle, Search, Ban, UserCheck, Image as ImageIcon, FileText, ExternalLink } from "lucide-react";
+import { CheckCircle, XCircle, Search, Ban, UserCheck, Image as ImageIcon, FileText, ExternalLink, Trash2 } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import AdminRoute from "@/components/auth/AdminRoute";
@@ -41,31 +41,23 @@ const Voters = () => {
   };
 
   const resolveObjectPath = (value: string): string => {
-    // If it's already just a key (no scheme), return as-is
     try {
       const url = new URL(value);
-      // Try to find the bucket segment and extract the path after it
       const publicIdx = url.pathname.indexOf('/object/');
       if (publicIdx !== -1) {
         const afterObject = url.pathname.substring(publicIdx + '/object/'.length);
-        // afterObject looks like: public/<bucket>/<path> OR signed/<bucket>/<path>
         const parts = afterObject.split('/');
-        // remove leading "public" or "signed" segment if present
         const startIdx = parts[0] === 'public' || parts[0] === 'signed' ? 1 : 0;
-        // next segment should be bucket, then the object key
         const bucket = parts[startIdx];
         const key = parts.slice(startIdx + 1).join('/');
         if (bucket === 'voter-documents') return key;
       }
-      // Fallback: try to find '/voter-documents/' directly
       const marker = '/voter-documents/';
       const idx = value.indexOf(marker);
       if (idx !== -1) return value.substring(idx + marker.length);
     } catch (_) {
-      // Not a URL; assume it's already an object key
       return value;
     }
-    // Default to original if we couldn't parse
     return value;
   };
 
@@ -76,7 +68,6 @@ const Voters = () => {
       if (error || !data?.signedUrl) throw error || new Error('No URL');
       window.open(data.signedUrl, '_blank', 'noopener');
     } catch (e: any) {
-      // Fallback to download and open via blob URL
       try {
         const key = resolveObjectPath(path);
         const { data: fileData, error: dlErr } = await supabase.storage.from('voter-documents').download(key);
@@ -158,6 +149,22 @@ const Voters = () => {
     }
   };
 
+  // New handler: delete voter
+  const handleDelete = async (voterId: string) => {
+    if (!confirm('Are you sure you want to delete this voter? This action cannot be undone.')) return;
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', voterId);
+      if (error) throw error;
+      toast.success('Voter deleted successfully');
+      fetchVoters();
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to delete voter');
+    }
+  };
+
   const filteredVoters = voters.filter(
     (voter) =>
       voter.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -171,157 +178,166 @@ const Voters = () => {
   return (
     <AdminRoute>
       <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold mb-2">Voter Management</h1>
-        <p className="text-muted-foreground">Approve, suspend, or manage registered voters</p>
-      </div>
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold mb-2">Voter Management</h1>
+          <p className="text-muted-foreground">Approve, suspend, or manage registered voters</p>
+        </div>
 
-      <Card className="mb-6">
-        <CardContent className="pt-6">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search by name or email..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-        </CardContent>
-      </Card>
+        <Card className="mb-6">
+          <CardContent className="pt-6">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by name or email..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+          </CardContent>
+        </Card>
 
-      <Card>
-        <CardContent className="pt-6">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Phone</TableHead>
-                <TableHead>Avatar</TableHead>
-                <TableHead>ID Document</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Registered</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredVoters.map((voter) => (
-                <TableRow key={voter.id}>
-                  <TableCell className="font-medium">{voter.full_name}</TableCell>
-                  <TableCell>{voter.email}</TableCell>
-                  <TableCell>{voter.phone || "N/A"}</TableCell>
-                  <TableCell>
-                    {voter.avatar_url ? (
-                      <img src={voter.avatar_url} alt={`${voter.full_name} avatar`} className="h-10 w-10 rounded object-cover border" />
-                    ) : (
-                      <div className="h-10 w-10 rounded border bg-muted flex items-center justify-center">
-                        <ImageIcon className="h-4 w-4 text-muted-foreground" />
+        <Card>
+          <CardContent className="pt-6">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Phone</TableHead>
+                  <TableHead>Avatar</TableHead>
+                  <TableHead>ID Document</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Registered</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredVoters.map((voter) => (
+                  <TableRow key={voter.id}>
+                    <TableCell className="font-medium">{voter.full_name}</TableCell>
+                    <TableCell>{voter.email}</TableCell>
+                    <TableCell>{voter.phone || "N/A"}</TableCell>
+                    <TableCell>
+                      {voter.avatar_url ? (
+                        <img src={voter.avatar_url} alt={`${voter.full_name} avatar`} className="h-10 w-10 rounded object-cover border" />
+                      ) : (
+                        <div className="h-10 w-10 rounded border bg-muted flex items-center justify-center">
+                          <ImageIcon className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {voter.identification_url ? (
+                        <button
+                          className="inline-flex items-center gap-1 text-primary underline"
+                          onClick={() => openId(voter.identification_url)}
+                          type="button"
+                        >
+                          <FileText className="h-4 w-4" />
+                          Open
+                          <ExternalLink className="h-3 w-3" />
+                        </button>
+                      ) : (
+                        <span className="text-muted-foreground">N/A</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        {voter.is_approved ? (
+                          <Badge variant="default">Approved</Badge>
+                        ) : (
+                          <Badge variant="secondary">Pending</Badge>
+                        )}
+                        {voter.is_suspended && (
+                          <Badge variant="destructive">Suspended</Badge>
+                        )}
                       </div>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {voter.identification_url ? (
-                      <button
-                        className="inline-flex items-center gap-1 text-primary underline"
-                        onClick={() => openId(voter.identification_url)}
-                        type="button"
-                      >
-                        <FileText className="h-4 w-4" />
-                        Open
-                        <ExternalLink className="h-3 w-3" />
-                      </button>
-                    ) : (
-                      <span className="text-muted-foreground">N/A</span>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex gap-2">
-                      {voter.is_approved ? (
-                        <Badge variant="default">Approved</Badge>
-                      ) : (
-                        <Badge variant="secondary">Pending</Badge>
-                      )}
-                      {voter.is_suspended && (
-                        <Badge variant="destructive">Suspended</Badge>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell>{new Date(voter.created_at).toLocaleDateString()}</TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex gap-2 justify-end">
-                      <Dialog open={editDialogOpen && editingVoter?.id === voter.id} onOpenChange={(o) => setEditDialogOpen(o)}>
-                        <DialogTrigger asChild>
-                          <Button size="sm" variant="outline" onClick={() => handleOpenEdit(voter)}>Edit</Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>Edit Voter</DialogTitle>
-                          </DialogHeader>
-                          <form onSubmit={handleSaveEdit} className="space-y-4">
-                            <div>
-                              <Label htmlFor="full_name">Full Name</Label>
-                              <Input id="full_name" value={editForm.full_name} onChange={(e) => setEditForm({ ...editForm, full_name: e.target.value })} />
-                            </div>
-                            <div>
-                              <Label htmlFor="phone">Phone</Label>
-                              <Input id="phone" value={editForm.phone} onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })} />
-                            </div>
-                            <div className="flex justify-end gap-2">
-                              <Button type="button" variant="outline" onClick={() => setEditDialogOpen(false)}>Cancel</Button>
-                              <Button type="submit">Save</Button>
-                            </div>
-                          </form>
-                        </DialogContent>
-                      </Dialog>
-                      {!voter.is_approved && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleApprove(voter.id)}
-                        >
-                          <UserCheck className="h-4 w-4 mr-1" />
-                          Approve
-                        </Button>
-                      )}
-                      {voter.identification_url && (
-                        <Button size="sm" variant="outline" onClick={() => handleClearId(voter.id)}>Clear ID</Button>
-                      )}
-                      {voter.is_suspended ? (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleSuspend(voter.id, false)}
-                        >
-                          <CheckCircle className="h-4 w-4 mr-1" />
-                          Reactivate
-                        </Button>
-                      ) : (
+                    </TableCell>
+                    <TableCell>{new Date(voter.created_at).toLocaleDateString()}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex gap-2 justify-end">
+                        <Dialog open={editDialogOpen && editingVoter?.id === voter.id} onOpenChange={(o) => setEditDialogOpen(o)}>
+                          <DialogTrigger asChild>
+                            <Button size="sm" variant="outline" onClick={() => handleOpenEdit(voter)}>Edit</Button>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Edit Voter</DialogTitle>
+                            </DialogHeader>
+                            <form onSubmit={handleSaveEdit} className="space-y-4">
+                              <div>
+                                <Label htmlFor="full_name">Full Name</Label>
+                                <Input id="full_name" value={editForm.full_name} onChange={(e) => setEditForm({ ...editForm, full_name: e.target.value })} />
+                              </div>
+                              <div>
+                                <Label htmlFor="phone">Phone</Label>
+                                <Input id="phone" value={editForm.phone} onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })} />
+                              </div>
+                              <div className="flex justify-end gap-2">
+                                <Button type="button" variant="outline" onClick={() => setEditDialogOpen(false)}>Cancel</Button>
+                                <Button type="submit">Save</Button>
+                              </div>
+                            </form>
+                          </DialogContent>
+                        </Dialog>
+                        {!voter.is_approved && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleApprove(voter.id)}
+                          >
+                            <UserCheck className="h-4 w-4 mr-1" />
+                            Approve
+                          </Button>
+                        )}
+                        {voter.identification_url && (
+                          <Button size="sm" variant="outline" onClick={() => handleClearId(voter.id)}>Clear ID</Button>
+                        )}
+                        {voter.is_suspended ? (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleSuspend(voter.id, false)}
+                          >
+                            <CheckCircle className="h-4 w-4 mr-1" />
+                            Reactivate
+                          </Button>
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => handleSuspend(voter.id, true)}
+                          >
+                            <Ban className="h-4 w-4 mr-1" />
+                            Suspend
+                          </Button>
+                        )}
+                        {/* Delete button */}
                         <Button
                           size="sm"
                           variant="destructive"
-                          onClick={() => handleSuspend(voter.id, true)}
+                          onClick={() => handleDelete(voter.id)}
+                          title="Delete voter"
                         >
-                          <Ban className="h-4 w-4 mr-1" />
-                          Suspend
+                          <Trash2 className="h-4 w-4" />
                         </Button>
-                      )}
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {filteredVoters.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                    No voters found
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-    </div>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {filteredVoters.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                      No voters found
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      </div>
     </AdminRoute>
   );
 };
