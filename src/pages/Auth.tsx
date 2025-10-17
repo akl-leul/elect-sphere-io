@@ -24,13 +24,13 @@ const Auth = () => {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
-        navigate("/");
+        ensureProfile().finally(() => navigate("/"));
       }
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' && session) {
-        navigate("/");
+        ensureProfile().finally(() => navigate("/"));
       }
     });
 
@@ -50,6 +50,7 @@ const Auth = () => {
       });
 
       if (error) throw error;
+      await ensureProfile();
       toast.success("Logged in successfully!");
     } catch (error: any) {
       if (error.errors) {
@@ -90,6 +91,33 @@ const Auth = () => {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const ensureProfile = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data: existing } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("id", user.id)
+        .single();
+      if (!existing) {
+        const fullName = (user.user_metadata?.full_name as string) || signupData.fullName || user.email || "";
+        const { error } = await supabase.from("profiles").insert([
+          {
+            id: user.id,
+            email: user.email as string,
+            full_name: fullName,
+            is_approved: false,
+            is_suspended: false,
+          },
+        ]);
+        if (error) throw error;
+      }
+    } catch (e) {
+      // No-op to avoid blocking auth flow
     }
   };
 

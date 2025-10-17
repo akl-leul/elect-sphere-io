@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Vote, Shield, Users, TrendingUp, CheckCircle2 } from "lucide-react";
+import ThemeToggle from "@/components/ui/theme-toggle";
 import heroImage from "@/assets/hero-election.png";
 
 const Index = () => {
@@ -41,49 +42,53 @@ const Index = () => {
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-background via-trust-light to-background">
-        <div className="absolute inset-0 opacity-30">
+      <section className="relative overflow-hidden bg-gradient-to-b from-background to-background/80">
+        <div className="absolute inset-0">
           <img 
             src={heroImage} 
             alt="Election hero background" 
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover opacity-20"
           />
         </div>
-        
-      <div className="mx-auto px-4 py-20 relative z-10 h-screen flex items-center justify-center">
-          <div className="max-w-4xl mx-auto text-center">
-            <Badge className="mb-4 bg-primary/10 text-white border-primary/20">
-              Secure • Transparent • Democratic
-            </Badge>
-            
-            <h1 className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-primary to-accent bg-clip-text text-white">
-              Your Voice, Your Vote
-            </h1>
-            
-            <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-              A modern, secure platform for conducting transparent elections with complete confidence. 
-              Every vote counts, every voice matters.
-            </p>
 
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
-              <Button size="lg" className="w-full sm:w-auto" onClick={handleGetStarted}>
-                <Vote className="mr-2 h-5 w-5" />
-                {isAuthenticated ? "Go to Dashboard" : "Get Started"}
-              </Button>
-              
-              {!isAuthenticated && (
-                <Button size="lg" variant="outline" className="w-full sm:w-auto" onClick={() => navigate("/auth")}>
-                  Login to Vote
+        <div className="relative z-10">
+          <div className="container mx-auto px-4 py-6 flex justify-end">
+            <ThemeToggle />
+          </div>
+
+          <div className="mx-auto px-4 pt-12 pb-24 md:pt-20 md:pb-32">
+            <div className="max-w-5xl mx-auto text-center">
+              <Badge className="mb-4 bg-primary/10 text-primary border-primary/20">
+                Secure • Transparent • Democratic
+              </Badge>
+
+              <h1 className="text-5xl md:text-7xl font-bold mb-6 tracking-tight">
+                <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">Your Voice</span>, Your Vote
+              </h1>
+
+              <p className="text-lg md:text-xl text-muted-foreground mb-10 max-w-3xl mx-auto">
+                A modern, secure platform for transparent elections. Simple voting, live results, and trusted governance.
+              </p>
+
+              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-10">
+                <Button size="lg" className="w-full sm:w-auto" onClick={handleGetStarted}>
+                  <Vote className="mr-2 h-5 w-5" />
+                  {isAuthenticated ? "Go to Dashboard" : "Get Started"}
                 </Button>
+                {!isAuthenticated && (
+                  <Button size="lg" variant="outline" className="w-full sm:w-auto" onClick={() => navigate("/auth")}>
+                    Login to Vote
+                  </Button>
+                )}
+              </div>
+
+              {activeElections > 0 && (
+                <div className="inline-flex items-center gap-2 bg-success/10 text-success px-4 py-2 rounded-full">
+                  <CheckCircle2 className="h-4 w-4" />
+                  <span className="font-medium">{activeElections} Active Election{activeElections !== 1 ? 's' : ''}</span>
+                </div>
               )}
             </div>
-
-            {activeElections > 0 && (
-              <div className="inline-flex items-center gap-2 bg-success-light text-success px-4 py-2 rounded-full">
-                <CheckCircle2 className="h-4 w-4" />
-                <span className="font-medium">{activeElections} Active Election{activeElections !== 1 ? 's' : ''}</span>
-              </div>
-            )}
           </div>
         </div>
       </section>
@@ -92,7 +97,7 @@ const Index = () => {
       <section className="py-20 bg-background">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-4">Why Choose Our Platform?</h2>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 tracking-tight">Why Choose Our Platform?</h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
               Built with security, transparency, and accessibility at its core
             </p>

@@ -76,10 +76,11 @@ const Profile = () => {
 
     if (uploadError) throw uploadError;
 
-    const { data: { publicUrl } } = supabase.storage
-      .from(bucket)
-      .getPublicUrl(fileName);
-
+    // For private buckets, store the object path; for public buckets, store public URL
+    if (bucket === 'voter-documents') {
+      return fileName;
+    }
+    const { data: { publicUrl } } = supabase.storage.from(bucket).getPublicUrl(fileName);
     return publicUrl;
   };
 

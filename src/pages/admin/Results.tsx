@@ -76,6 +76,7 @@ const Results = () => {
 
               return {
                 name: candidate.profiles?.full_name,
+                logo: candidate.campaign_logo_url,
                 votes: count || 0,
               };
             })
@@ -159,6 +160,13 @@ const Results = () => {
                         <span className="text-2xl font-bold text-muted-foreground">
                           #{idx + 1}
                         </span>
+                        {candidate.logo && (
+                          <img
+                            src={candidate.logo}
+                            alt={`${candidate.name} logo`}
+                            className="h-8 w-8 rounded object-cover border"
+                          />
+                        )}
                         <span className="font-medium">{candidate.name}</span>
                       </div>
                       <span className="text-lg font-bold">{candidate.votes} votes</span>
