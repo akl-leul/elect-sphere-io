@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Vote, Shield, Users, TrendingUp, CheckCircle2 } from "lucide-react";
-import heroImage from "@/assets/hero-election.png";
+import heroImage from "@/assets/hero-election.png"; // Ensure the hero image path is correct
 
 const Index = () => {
   const navigate = useNavigate();
@@ -39,29 +39,30 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen font-sans bg-gradient-to-br from-[#131415] to-[#323C43]">
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-background via-trust-light to-background">
+      <section className="relative overflow-hidden bg-gradient-to-r from-[#001F26] to-[#001B3C]">
         <div className="absolute inset-0 opacity-30">
           <img 
             src={heroImage} 
             alt="Election hero background" 
-            className="w-full h-full object-cover"
+           className="w-full h-full object-cover sticky"
+
           />
         </div>
-        
-      <div className="mx-auto px-4 py-20 relative z-10 h-screen flex items-center justify-center">
-          <div className="max-w-4xl mx-auto text-center">
-            <Badge className="mb-4 bg-primary/10 text-white border-primary/20">
+
+        <div className="mx-auto px-6 py-20 relative z-10 h-screen flex flex-col justify-center items-center">
+          <div className="max-w-3xl text-center text-white">
+            <Badge className="mb-6 bg-primary/20 text-primary font-medium">
               Secure • Transparent • Democratic
             </Badge>
-            
-            <h1 className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-primary to-accent bg-clip-text text-white">
+
+            <h1 className="text-5xl md:text-6xl font-bold mb-8 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
               Your Voice, Your Vote
             </h1>
-            
-            <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-              A modern, secure platform for conducting transparent elections with complete confidence. 
+
+            <p className="text-xl text-muted-foreground mb-10 max-w-2xl mx-auto">
+              A modern, secure platform for conducting transparent elections with complete confidence.
               Every vote counts, every voice matters.
             </p>
 
@@ -70,7 +71,7 @@ const Index = () => {
                 <Vote className="mr-2 h-5 w-5" />
                 {isAuthenticated ? "Go to Dashboard" : "Get Started"}
               </Button>
-              
+
               {!isAuthenticated && (
                 <Button size="lg" variant="outline" className="w-full sm:w-auto" onClick={() => navigate("/auth")}>
                   Login to Vote
@@ -79,7 +80,7 @@ const Index = () => {
             </div>
 
             {activeElections > 0 && (
-              <div className="inline-flex items-center gap-2 bg-success-light text-success px-4 py-2 rounded-full">
+              <div className="inline-flex items-center gap-2 bg-green-500 text-white px-4 py-2 rounded-full">
                 <CheckCircle2 className="h-4 w-4" />
                 <span className="font-medium">{activeElections} Active Election{activeElections !== 1 ? 's' : ''}</span>
               </div>
@@ -89,9 +90,9 @@ const Index = () => {
       </section>
 
       {/* Features Section */}
-      <section className="py-20 bg-background">
+      <section className="py-20 bg-[#232A2D]">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
+          <div className="text-center mb-12 text-white">
             <h2 className="text-3xl font-bold mb-4">Why Choose Our Platform?</h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
               Built with security, transparency, and accessibility at its core
@@ -99,7 +100,7 @@ const Index = () => {
           </div>
 
           <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4 max-w-6xl mx-auto">
-            <Card className="border-2 hover:border-primary transition-colors">
+            <Card className="border-2 hover:border-primary transition-colors text-white">
               <CardHeader>
                 <Shield className="h-10 w-10 text-primary mb-2" />
                 <CardTitle>Secure</CardTitle>
@@ -109,7 +110,7 @@ const Index = () => {
               </CardHeader>
             </Card>
 
-            <Card className="border-2 hover:border-primary transition-colors">
+            <Card className="border-2 hover:border-primary transition-colors text-white">
               <CardHeader>
                 <Vote className="h-10 w-10 text-primary mb-2" />
                 <CardTitle>Easy Voting</CardTitle>
@@ -119,7 +120,7 @@ const Index = () => {
               </CardHeader>
             </Card>
 
-            <Card className="border-2 hover:border-primary transition-colors">
+            <Card className="border-2 hover:border-primary transition-colors text-white">
               <CardHeader>
                 <TrendingUp className="h-10 w-10 text-primary mb-2" />
                 <CardTitle>Real-time Results</CardTitle>
@@ -129,7 +130,7 @@ const Index = () => {
               </CardHeader>
             </Card>
 
-            <Card className="border-2 hover:border-primary transition-colors">
+            <Card className="border-2 hover:border-primary transition-colors text-white">
               <CardHeader>
                 <Users className="h-10 w-10 text-primary mb-2" />
                 <CardTitle>Candidate Profiles</CardTitle>
@@ -143,12 +144,12 @@ const Index = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-r from-primary to-accent">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl font-bold text-white mb-4">
+      <section className="py-20  bg-[#232A2D]">
+        <div className="container mx-auto px-4 text-center text-white">
+          <h2 className="text-3xl font-bold mb-4">
             Ready to Make Your Voice Heard?
           </h2>
-          <p className="text-white/90 mb-8 max-w-2xl mx-auto">
+          <p className="mb-8 max-w-2xl mx-auto">
             Join thousands of voters who trust our platform for secure, transparent elections
           </p>
           <Button 
@@ -162,7 +163,7 @@ const Index = () => {
       </section>
 
       {/* Footer */}
-      <footer className="border-t py-8 bg-card">
+      <footer className="border-t py-8 bg-[#181C1F]">
         <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
           <p>© 2025 Secure Election Portal. All rights reserved.</p>
           <p className="mt-2">Built with security and transparency in mind</p>
