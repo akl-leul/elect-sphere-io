@@ -43,7 +43,7 @@ const Register = () => {
         .from("elections")
         .select("*")
         .eq("is_active", true)
-        .eq("registration_enabled", true);
+        .eq("registration_enabled", true); // Only fetch elections with registration enabled
 
       if (error) throw error;
       setElections(data || []);
@@ -141,18 +141,16 @@ const Register = () => {
         manifestoUrl = await uploadFile(manifestoFile, 'candidate-files', `${user.id}/manifestos`);
       }
 
-      const { error } = await supabase.from("candidates").insert([
-        {
-          user_id: user.id,
-          election_id: formData.election_id,
-          position_id: formData.position_id,
-          slogan: validated.slogan,
-          biography: validated.biography,
-          campaign_logo_url: logoUrl,
-          manifesto_url: manifestoUrl,
-          social_links: validated.social_links,
-        },
-      ]);
+      const { error } = await supabase.from("candidates").insert([{
+        user_id: user.id,
+        election_id: formData.election_id,
+        position_id: formData.position_id,
+        slogan: validated.slogan,
+        biography: validated.biography,
+        campaign_logo_url: logoUrl,
+        manifesto_url: manifestoUrl,
+        social_links: validated.social_links,
+      }]);
 
       if (error) throw error;
 

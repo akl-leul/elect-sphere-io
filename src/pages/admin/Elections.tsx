@@ -145,162 +145,164 @@ const Elections = () => {
   return (
     <AdminRoute>
       <div className="container mx-auto px-4 py-8">
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-4xl font-bold mb-2">Election Management</h1>
-          <p className="text-muted-foreground">Create and manage elections</p>
-        </div>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={resetForm}>
-              <Plus className="h-4 w-4 mr-2" />
-              Create Election
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>{editingElection ? "Edit Election" : "Create New Election"}</DialogTitle>
-              <DialogDescription>
-                Fill in the details to {editingElection ? "update" : "create"} an election
-              </DialogDescription>
-            </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <Label htmlFor="title">Title</Label>
-                <Input
-                  id="title"
-                  value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  rows={3}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="start_date">Start Date & Time</Label>
-                  <Input
-                    id="start_date"
-                    type="datetime-local"
-                    value={formData.start_date}
-                    onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="end_date">End Date & Time</Label>
-                  <Input
-                    id="end_date"
-                    type="datetime-local"
-                    value={formData.end_date}
-                    onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
-                  />
-                </div>
-              </div>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="is_active">Active Election</Label>
-                  <Switch
-                    id="is_active"
-                    checked={formData.is_active}
-                    onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
-                  />
-                </div>
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="registration_enabled">Registration Enabled</Label>
-                  <Switch
-                    id="registration_enabled"
-                    checked={formData.registration_enabled}
-                    onCheckedChange={(checked) => setFormData({ ...formData, registration_enabled: checked })}
-                  />
-                </div>
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="results_visible">Results Visible</Label>
-                  <Switch
-                    id="results_visible"
-                    checked={formData.results_visible}
-                    onCheckedChange={(checked) => setFormData({ ...formData, results_visible: checked })}
-                  />
-                </div>
-              </div>
-              <div className="flex gap-2 justify-end">
-                <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
-                  Cancel
-                </Button>
-                <Button type="submit">
-                  {editingElection ? "Update" : "Create"} Election
-                </Button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      <div className="grid gap-6">
-        {elections.map((election) => (
-          <Card key={election.id}>
-            <CardHeader>
-              <div className="flex items-start justify-between">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    {election.title}
-                    {election.is_active && (
-                      <span className="px-2 py-1 text-xs bg-success/20 text-success rounded-full">Active</span>
-                    )}
-                  </CardTitle>
-                  <CardDescription>{election.description}</CardDescription>
-                </div>
-                <div className="flex gap-2">
-                  <Button size="sm" variant="outline" onClick={() => handleEdit(election)}>
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button size="sm" variant="destructive" onClick={() => handleDelete(election.id)}>
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                  <span>Start: {election.start_date ? new Date(election.start_date).toLocaleString() : "Not set"}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                  <span>End: {election.end_date ? new Date(election.end_date).toLocaleString() : "Not set"}</span>
-                </div>
-              </div>
-              <div className="flex gap-4 mt-4">
-                <span className={`text-sm ${election.registration_enabled ? "text-success" : "text-muted-foreground"}`}>
-                  Registration: {election.registration_enabled ? "Enabled" : "Disabled"}
-                </span>
-                <span className={`text-sm ${election.results_visible ? "text-success" : "text-muted-foreground"}`}>
-                  Results: {election.results_visible ? "Visible" : "Hidden"}
-                </span>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-        {elections.length === 0 && (
-          <Card>
-            <CardContent className="flex flex-col items-center justify-center py-12">
-              <p className="text-muted-foreground mb-4">No elections created yet</p>
-              <Button onClick={() => setDialogOpen(true)}>
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-4xl font-bold mb-2">Election Management</h1>
+            <p className="text-muted-foreground">Create and manage elections</p>
+          </div>
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={resetForm}>
                 <Plus className="h-4 w-4 mr-2" />
-                Create Your First Election
+                Create Election
               </Button>
-            </CardContent>
-          </Card>
-        )}
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>{editingElection ? "Edit Election" : "Create New Election"}</DialogTitle>
+                <DialogDescription>
+                  Fill in the details to {editingElection ? "update" : "create"} an election
+                </DialogDescription>
+              </DialogHeader>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <Label htmlFor="title">Title</Label>
+                  <Input
+                    id="title"
+                    value={formData.title}
+                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="description">Description</Label>
+                  <Textarea
+                    id="description"
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    rows={3}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="start_date">Start Date & Time</Label>
+                    <Input
+                      id="start_date"
+                      type="datetime-local"
+                      value={formData.start_date}
+                      onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="end_date">End Date & Time</Label>
+                    <Input
+                      id="end_date"
+                      type="datetime-local"
+                      value={formData.end_date}
+                      onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
+                    />
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="is_active">Active Election</Label>
+                    <Switch
+                      id="is_active"
+                      checked={formData.is_active}
+                      onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="registration_enabled">Registration Enabled</Label>
+                    <Switch
+                      id="registration_enabled"
+                      checked={formData.registration_enabled}
+                      onCheckedChange={(checked) => setFormData({ ...formData, registration_enabled: checked })}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="results_visible">Results Visible</Label>
+                    <Switch
+                      id="results_visible"
+                      checked={formData.results_visible}
+                      onCheckedChange={(checked) => setFormData({ ...formData, results_visible: checked })}
+                    />
+                  </div>
+                </div>
+                {formData.registration_enabled && (
+                  <div className="flex gap-2 justify-end">
+                    <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button type="submit">
+                      {editingElection ? "Update" : "Create"} Election
+                    </Button>
+                  </div>
+                )}
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
+
+        <div className="grid gap-6">
+          {elections.map((election) => (
+            <Card key={election.id}>
+              <CardHeader>
+                <div className="flex items-start justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      {election.title}
+                      {election.is_active && (
+                        <span className="px-2 py-1 text-xs bg-success/20 text-success rounded-full">Active</span>
+                      )}
+                    </CardTitle>
+                    <CardDescription>{election.description}</CardDescription>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline" onClick={() => handleEdit(election)}>
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button size="sm" variant="destructive" onClick={() => handleDelete(election.id)}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <span>Start: {election.start_date ? new Date(election.start_date).toLocaleString() : "Not set"}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <span>End: {election.end_date ? new Date(election.end_date).toLocaleString() : "Not set"}</span>
+                  </div>
+                </div>
+                <div className="flex gap-4 mt-4">
+                  <span className={`text-sm ${election.registration_enabled ? "text-success" : "text-muted-foreground"}`}>
+                    Registration: {election.registration_enabled ? "Enabled" : "Disabled"}
+                  </span>
+                  <span className={`text-sm ${election.results_visible ? "text-success" : "text-muted-foreground"}`}>
+                    Results: {election.results_visible ? "Visible" : "Hidden"}
+                  </span>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+          {elections.length === 0 && (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <p className="text-muted-foreground mb-4">No elections created yet</p>
+                <Button onClick={() => setDialogOpen(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Your First Election
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+        </div>
       </div>
-    </div>
     </AdminRoute>
   );
 };
