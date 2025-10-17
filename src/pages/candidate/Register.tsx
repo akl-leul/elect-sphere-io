@@ -176,7 +176,8 @@ const Register = () => {
       <div className="container mx-auto px-4 py-8">
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
-            <UserCheck className="h-16 w-16 text-muted-foreground mb-4" />
+             <img src="https://sitedu.info/img/logo/primary-logo.webp" alt="" className="w-10 h-10 rounded"/>
+        
             <p className="text-muted-foreground">
               Candidate registration is not currently open
             </p>
@@ -188,7 +189,9 @@ const Register = () => {
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-2xl">
-      <div className="mb-8">
+      <div className="mb-8 flex">
+         <img src="https://sitedu.info/img/logo/primary-logo.webp" alt="" className="w-10 h-10 rounded"/>
+             
         <h1 className="text-4xl font-bold mb-2">Register as Candidate</h1>
         <p className="text-muted-foreground">Apply to run in an election</p>
       </div>

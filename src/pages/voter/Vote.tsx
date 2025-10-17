@@ -139,6 +139,8 @@ const Vote = () => {
       <div className="container mx-auto px-4 py-8">
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
+             <img src="https://sitedu.info/img/logo/primary-logo.webp" alt="" className="w-10 h-10 rounded"/>
+        
             <p className="text-muted-foreground mb-4">
               Your account is pending approval. You'll be able to vote once an administrator approves your registration.
             </p>
@@ -153,7 +155,8 @@ const Vote = () => {
       <div className="container mx-auto px-4 py-8">
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
-            <VoteIcon className="h-16 w-16 text-muted-foreground mb-4" />
+             <img src="https://sitedu.info/img/logo/primary-logo.webp" alt="" className="w-10 h-10 rounded"/>
+        
             <p className="text-muted-foreground">No active elections at this time</p>
           </CardContent>
         </Card>

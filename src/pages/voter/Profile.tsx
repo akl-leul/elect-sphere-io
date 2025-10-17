@@ -139,7 +139,9 @@ const Profile = () => {
   return (
     <div className="container mx-auto px-4 py-8 max-w-2xl">
       <div className="mb-8">
-        <h1 className="text-4xl font-bold mb-2">My Profile</h1>
+        
+        <h1 className="text-4xl font-bold mb-2 flex gap-2"><img src="https://sitedu.info/img/logo/primary-logo.webp" alt="" className="w-10 h-10 rounded"/>
+          My Profile</h1>
         <p className="text-muted-foreground">Manage your account information</p>
       </div>
 
