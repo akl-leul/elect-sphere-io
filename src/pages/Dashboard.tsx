@@ -97,9 +97,9 @@ const Dashboard = () => {
           </div>
           <div className="flex items-center gap-4">
             <span className="text-sm text-muted-foreground">
-              Welcome, {profile?.full_name || user?.email}
-            </span>
-            <Button variant="outline" size="sm" onClick={handleLogout}>
+              Welcome, {profile?.full_name || user?.email} 
+            </span> 
+            <Button variant="outline" size="sm" onClick={handleLogout} className="hover:bg-red-600">
               <LogOut className="h-4 w-4 mr-2" />
               Logout
             </Button>
