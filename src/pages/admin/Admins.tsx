@@ -8,6 +8,8 @@ import { toast } from "sonner";
 import { Plus, Trash2, Shield } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { adminEmailSchema } from "@/lib/validation";
+import AdminRoute from "@/components/auth/AdminRoute";
 
 const Admins = () => {
   const [admins, setAdmins] = useState<any[]>([]);
@@ -41,11 +43,13 @@ const Admins = () => {
   const handleAddAdmin = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      const validated = adminEmailSchema.parse({ email });
+      
       // First check if user exists
       const { data: userData, error: userError } = await supabase
         .from("profiles")
         .select("id")
-        .eq("email", email)
+        .eq("email", validated.email)
         .single();
 
       if (userError || !userData) {
@@ -78,7 +82,11 @@ const Admins = () => {
       setEmail("");
       fetchAdmins();
     } catch (error: any) {
-      toast.error(error.message);
+      if (error.errors) {
+        error.errors.forEach((err: any) => toast.error(err.message));
+      } else {
+        toast.error(error.message);
+      }
     }
   };
 
@@ -106,7 +114,8 @@ const Admins = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <AdminRoute>
+      <div className="container mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-4xl font-bold mb-2">Admin Management</h1>
@@ -195,6 +204,7 @@ const Admins = () => {
         </CardContent>
       </Card>
     </div>
+    </AdminRoute>
   );
 };
 

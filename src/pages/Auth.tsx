@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Vote, Shield } from "lucide-react";
 import { toast } from "sonner";
+import { loginSchema, signupSchema } from "@/lib/validation";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -41,15 +42,21 @@ const Auth = () => {
     setLoading(true);
 
     try {
+      const validated = loginSchema.parse(loginData);
+      
       const { error } = await supabase.auth.signInWithPassword({
-        email: loginData.email,
-        password: loginData.password,
+        email: validated.email,
+        password: validated.password,
       });
 
       if (error) throw error;
       toast.success("Logged in successfully!");
     } catch (error: any) {
-      toast.error(error.message || "Login failed");
+      if (error.errors) {
+        error.errors.forEach((err: any) => toast.error(err.message));
+      } else {
+        toast.error(error.message || "Login failed");
+      }
     } finally {
       setLoading(false);
     }
@@ -57,35 +64,30 @@ const Auth = () => {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (signupData.password !== signupData.confirmPassword) {
-      toast.error("Passwords do not match");
-      return;
-    }
-
-    if (signupData.password.length < 6) {
-      toast.error("Password must be at least 6 characters");
-      return;
-    }
-
     setLoading(true);
 
     try {
+      const validated = signupSchema.parse(signupData);
+      
       const { error } = await supabase.auth.signUp({
-        email: signupData.email,
-        password: signupData.password,
+        email: validated.email,
+        password: validated.password,
         options: {
           data: {
-            full_name: signupData.fullName,
+            full_name: validated.fullName,
           },
           emailRedirectTo: `${window.location.origin}/`,
         },
       });
 
       if (error) throw error;
-      toast.success("Account created successfully! Please check your email.");
+      toast.success("Account created successfully! You can now log in.");
     } catch (error: any) {
-      toast.error(error.message || "Signup failed");
+      if (error.errors) {
+        error.errors.forEach((err: any) => toast.error(err.message));
+      } else {
+        toast.error(error.message || "Signup failed");
+      }
     } finally {
       setLoading(false);
     }

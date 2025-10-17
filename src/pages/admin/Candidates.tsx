@@ -8,6 +8,7 @@ import { CheckCircle, XCircle, Search, Eye } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import AdminRoute from "@/components/auth/AdminRoute";
 
 const Candidates = () => {
   const [candidates, setcandidates] = useState<any[]>([]);
@@ -84,7 +85,8 @@ const Candidates = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <AdminRoute>
+      <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
         <h1 className="text-4xl font-bold mb-2">Candidate Management</h1>
         <p className="text-muted-foreground">Review and approve candidate applications</p>
@@ -226,6 +228,7 @@ const Candidates = () => {
         </DialogContent>
       </Dialog>
     </div>
+    </AdminRoute>
   );
 };
 

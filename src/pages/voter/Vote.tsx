@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Vote as VoteIcon, CheckCircle } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { getDeviceFingerprint, getClientIP } from "@/lib/fingerprint";
 
 const Vote = () => {
   const [elections, setElections] = useState<any[]>([]);
@@ -103,14 +104,20 @@ const Vote = () => {
 
       const election = elections[0];
 
+      // Get real device fingerprint and IP
+      const [deviceFingerprint, ipAddress] = await Promise.all([
+        getDeviceFingerprint(),
+        getClientIP(),
+      ]);
+
       const { error } = await supabase.from("votes").insert([
         {
           voter_id: user.id,
           election_id: election.id,
           position_id: positionId,
           candidate_id: candidateId,
-          device_fingerprint: "web-device",
-          ip_address: "0.0.0.0",
+          device_fingerprint: deviceFingerprint,
+          ip_address: ipAddress,
         },
       ]);
 

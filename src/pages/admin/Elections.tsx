@@ -9,6 +9,8 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { Plus, Edit, Trash2, Calendar } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import AdminRoute from "@/components/auth/AdminRoute";
+import { electionSchema } from "@/lib/validation";
 
 const Elections = () => {
   const [elections, setElections] = useState<any[]>([]);
@@ -122,7 +124,8 @@ const Elections = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <AdminRoute>
+      <div className="container mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-4xl font-bold mb-2">Election Management</h1>
@@ -279,6 +282,7 @@ const Elections = () => {
         )}
       </div>
     </div>
+    </AdminRoute>
   );
 };
 

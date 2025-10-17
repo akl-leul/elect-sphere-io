@@ -5,6 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { Trophy } from "lucide-react";
+import AdminRoute from "@/components/auth/AdminRoute";
 
 const Results = () => {
   const [elections, setElections] = useState<any[]>([]);
@@ -98,7 +99,8 @@ const Results = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <AdminRoute>
+      <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
         <h1 className="text-4xl font-bold mb-2">Election Results</h1>
         <p className="text-muted-foreground">View live and final election results</p>
@@ -175,6 +177,7 @@ const Results = () => {
         )}
       </div>
     </div>
+    </AdminRoute>
   );
 };
 

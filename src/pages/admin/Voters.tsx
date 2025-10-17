@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { CheckCircle, XCircle, Search, Ban, UserCheck } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import AdminRoute from "@/components/auth/AdminRoute";
 
 const Voters = () => {
   const [voters, setVoters] = useState<any[]>([]);
@@ -74,7 +75,8 @@ const Voters = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <AdminRoute>
+      <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
         <h1 className="text-4xl font-bold mb-2">Voter Management</h1>
         <p className="text-muted-foreground">Approve, suspend, or manage registered voters</p>
@@ -173,6 +175,7 @@ const Voters = () => {
         </CardContent>
       </Card>
     </div>
+    </AdminRoute>
   );
 };
 

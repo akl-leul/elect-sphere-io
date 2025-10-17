@@ -10,6 +10,7 @@ import { Plus, Edit, Trash2 } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import AdminRoute from "@/components/auth/AdminRoute";
 
 const Positions = () => {
   const [positions, setPositions] = useState<any[]>([]);
@@ -134,7 +135,8 @@ const Positions = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <AdminRoute>
+      <div className="container mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-4xl font-bold mb-2">Position Management</h1>
@@ -260,6 +262,7 @@ const Positions = () => {
         </CardContent>
       </Card>
     </div>
+    </AdminRoute>
   );
 };
 
