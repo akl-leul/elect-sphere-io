@@ -5,11 +5,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { User, Mail, Phone, CheckCircle, XCircle } from "lucide-react";
+import { User, Mail, Phone, CheckCircle, XCircle, Upload, Image as ImageIcon, FileText, Loader2 } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { profileSchema } from "@/lib/validation";
 
 const Profile = () => {
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [idFile, setIdFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string>("");
   const [formData, setFormData] = useState({
     full_name: "",
     phone: "",
@@ -33,6 +39,7 @@ const Profile = () => {
       if (error) throw error;
 
       setProfile(data);
+      setAvatarPreview(data.avatar_url || "");
       setFormData({
         full_name: data.full_name || "",
         phone: data.phone || "",
@@ -44,15 +51,69 @@ const Profile = () => {
     }
   };
 
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setAvatarFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAvatarPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const uploadFile = async (file: File, bucket: string, folder: string): Promise<string> => {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${folder}/${Date.now()}.${fileExt}`;
+    
+    const { error: uploadError } = await supabase.storage
+      .from(bucket)
+      .upload(fileName, file, {
+        cacheControl: '3600',
+        upsert: false
+      });
+
+    if (uploadError) throw uploadError;
+
+    const { data: { publicUrl } } = supabase.storage
+      .from(bucket)
+      .getPublicUrl(fileName);
+
+    return publicUrl;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setUploading(true);
+    
     try {
+      // Validate form data
+      const validated = profileSchema.parse(formData);
+
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+      let avatarUrl = profile?.avatar_url;
+      let idUrl = profile?.identification_url;
+
+      // Upload avatar if changed
+      if (avatarFile) {
+        avatarUrl = await uploadFile(avatarFile, 'avatars', user.id);
+      }
+
+      // Upload ID document if provided
+      if (idFile) {
+        idUrl = await uploadFile(idFile, 'voter-documents', user.id);
+      }
+
       const { error } = await supabase
         .from("profiles")
-        .update(formData)
+        .update({
+          ...validated,
+          avatar_url: avatarUrl,
+          identification_url: idUrl,
+        })
         .eq("id", user.id);
 
       if (error) throw error;
@@ -60,7 +121,13 @@ const Profile = () => {
       toast.success("Profile updated successfully");
       fetchProfile();
     } catch (error: any) {
-      toast.error(error.message);
+      if (error.errors) {
+        error.errors.forEach((err: any) => toast.error(err.message));
+      } else {
+        toast.error(error.message || "Failed to update profile");
+      }
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -107,6 +174,41 @@ const Profile = () => {
         </CardContent>
       </Card>
 
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Profile Picture</CardTitle>
+          <CardDescription>Upload your profile photo</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center gap-4">
+            <Avatar className="h-24 w-24">
+              <AvatarImage src={avatarPreview} alt="Profile" />
+              <AvatarFallback>
+                <User className="h-12 w-12" />
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1">
+              <Label htmlFor="avatar" className="cursor-pointer">
+                <div className="flex items-center gap-2 text-sm text-primary hover:underline">
+                  <Upload className="h-4 w-4" />
+                  Change Profile Picture
+                </div>
+              </Label>
+              <Input
+                id="avatar"
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                onChange={handleAvatarChange}
+                className="hidden"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                JPG, PNG, or WEBP • Max 2MB
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
           <CardTitle>Profile Information</CardTitle>
@@ -147,7 +249,7 @@ const Profile = () => {
             <div>
               <Label htmlFor="phone" className="flex items-center gap-2">
                 <Phone className="h-4 w-4" />
-                Phone Number
+                Phone Number (Optional)
               </Label>
               <Input
                 id="phone"
@@ -156,10 +258,42 @@ const Profile = () => {
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 placeholder="+1234567890"
               />
+              <p className="text-xs text-muted-foreground mt-1">
+                Format: +[country code][number]
+              </p>
             </div>
 
-            <Button type="submit" className="w-full">
-              Update Profile
+            <div>
+              <Label htmlFor="identification" className="flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                Identification Document
+              </Label>
+              <Input
+                id="identification"
+                type="file"
+                accept="image/jpeg,image/png,image/webp,application/pdf"
+                onChange={(e) => setIdFile(e.target.files?.[0] || null)}
+                className="cursor-pointer"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Upload your ID card, passport, or student ID • Max 5MB
+              </p>
+              {!profile?.is_approved && profile?.identification_url && (
+                <p className="text-xs text-warning mt-1">
+                  ✓ Document uploaded - awaiting admin verification
+                </p>
+              )}
+            </div>
+
+            <Button type="submit" className="w-full" disabled={uploading}>
+              {uploading ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Updating...
+                </>
+              ) : (
+                "Update Profile"
+              )}
             </Button>
           </form>
         </CardContent>

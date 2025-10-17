@@ -50,10 +50,25 @@ const Elections = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      // Validate form data
+      const validated = electionSchema.parse({
+        title: formData.title,
+        description: formData.description,
+        start_date: formData.start_date,
+        end_date: formData.end_date,
+      });
+
+      const dataToSubmit = {
+        ...validated,
+        is_active: formData.is_active,
+        registration_enabled: formData.registration_enabled,
+        results_visible: formData.results_visible,
+      };
+
       if (editingElection) {
         const { error } = await supabase
           .from("elections")
-          .update(formData)
+          .update(dataToSubmit)
           .eq("id", editingElection.id);
 
         if (error) throw error;
@@ -61,7 +76,7 @@ const Elections = () => {
       } else {
         const { error } = await supabase
           .from("elections")
-          .insert([formData]);
+          .insert([dataToSubmit]);
 
         if (error) throw error;
         toast.success("Election created successfully");
@@ -71,7 +86,11 @@ const Elections = () => {
       resetForm();
       fetchElections();
     } catch (error: any) {
-      toast.error(error.message);
+      if (error.errors) {
+        error.errors.forEach((err: any) => toast.error(err.message));
+      } else {
+        toast.error(error.message || "Failed to save election");
+      }
     }
   };
 
