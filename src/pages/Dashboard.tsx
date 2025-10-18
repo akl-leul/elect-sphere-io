@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Vote, UserCheck, Users, Settings, LogOut } from "lucide-react";
+import { Vote, UserCheck, Users, Settings, LogOut, CircleUserRound, ListChecks} from "lucide-react";
 import { toast } from "sonner";
 
 const Dashboard = () => {
@@ -151,6 +151,35 @@ const Dashboard = () => {
             <CardContent>
               <Button className="w-full" variant="outline">
                 View Profile
+              </Button>
+            </CardContent>
+          </Card>
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate("/candidate/my-candidacy")}>
+            <CardHeader>
+              <CircleUserRound className="h-8 w-8 text-primary mb-2" />
+              <CardTitle>My Candidacy</CardTitle>
+              <CardDescription>See your candiday registration</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button className="w-full" variant="outline">
+                View Candidacy
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate("/candidates")}>
+            <CardHeader>
+              <ListChecks className="h-8 w-8 text-primary mb-2" />
+              <CardTitle>
+                View Candidates
+              </CardTitle>
+              <CardDescription>
+                Browse all registered candidates
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button className="w-full" variant="outline">
+                View Candidates
               </Button>
             </CardContent>
           </Card>
