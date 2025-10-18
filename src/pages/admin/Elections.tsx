@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Plus, Edit, Trash2, Calendar } from "lucide-react";
+import { Plus, Edit, Trash2, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import AdminRoute from "@/components/auth/AdminRoute";
 import { electionSchema } from "@/lib/validation";
@@ -26,6 +26,8 @@ const Elections = () => {
     registration_enabled: true,
     results_visible: false,
   });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(5);
 
   useEffect(() => {
     fetchElections();
@@ -138,6 +140,13 @@ const Elections = () => {
     });
   };
 
+  // Pagination
+  const totalPages = Math.ceil(elections.length / itemsPerPage);
+  const paginatedElections = elections.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
   if (loading) {
     return <div className="flex items-center justify-center h-96">Loading...</div>;
   }
@@ -243,7 +252,7 @@ const Elections = () => {
         </div>
 
         <div className="grid gap-6">
-          {elections.map((election) => (
+          {paginatedElections.map((election) => (
             <Card key={election.id}>
               <CardHeader>
                 <div className="flex items-start justify-between">
@@ -288,7 +297,7 @@ const Elections = () => {
               </CardContent>
             </Card>
           ))}
-          {elections.length === 0 && (
+          {paginatedElections.length === 0 && elections.length === 0 && (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">
                 <p className="text-muted-foreground mb-4">No elections created yet</p>
@@ -300,6 +309,40 @@ const Elections = () => {
             </Card>
           )}
         </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <Card className="mt-6">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-muted-foreground">
+                  Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, elections.length)} of {elections.length} elections
+                </p>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    disabled={currentPage === 1}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <span className="text-sm">
+                    Page {currentPage} of {totalPages}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    disabled={currentPage === totalPages}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </AdminRoute>
   );

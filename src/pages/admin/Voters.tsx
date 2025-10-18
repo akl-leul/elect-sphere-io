@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { CheckCircle, XCircle, Search, Ban, UserCheck, Image as ImageIcon, FileText, ExternalLink, Trash2 } from "lucide-react";
+import { CheckCircle, XCircle, Search, Ban, UserCheck, Image as ImageIcon, FileText, ExternalLink, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import AdminRoute from "@/components/auth/AdminRoute";
@@ -18,7 +19,9 @@ const Voters = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingVoter, setEditingVoter] = useState<any>(null);
-  const [editForm, setEditForm] = useState({ full_name: "", phone: "" });
+  const [editForm, setEditForm] = useState({ full_name: "", phone: "", gender: "" });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
 
   useEffect(() => {
     fetchVoters();
@@ -113,7 +116,7 @@ const Voters = () => {
 
   const handleOpenEdit = (voter: any) => {
     setEditingVoter(voter);
-    setEditForm({ full_name: voter.full_name || "", phone: voter.phone || "" });
+    setEditForm({ full_name: voter.full_name || "", phone: voter.phone || "", gender: voter.gender || "" });
     setEditDialogOpen(true);
   };
 
@@ -123,7 +126,7 @@ const Voters = () => {
     try {
       const { error } = await supabase
         .from('profiles')
-        .update({ full_name: editForm.full_name, phone: editForm.phone })
+        .update({ full_name: editForm.full_name, phone: editForm.phone, gender: editForm.gender })
         .eq('id', editingVoter.id);
       if (error) throw error;
       toast.success('Voter updated');
@@ -171,6 +174,13 @@ const Voters = () => {
       voter.email?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Pagination
+  const totalPages = Math.ceil(filteredVoters.length / itemsPerPage);
+  const paginatedVoters = filteredVoters.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
   if (loading) {
     return <div className="flex items-center justify-center h-96">Loading...</div>;
   }
@@ -205,6 +215,7 @@ const Voters = () => {
                   <TableHead>Name</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Phone</TableHead>
+                  <TableHead>Gender</TableHead>
                   <TableHead>Avatar</TableHead>
                   <TableHead>ID Document</TableHead>
                   <TableHead>Status</TableHead>
@@ -213,11 +224,12 @@ const Voters = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredVoters.map((voter) => (
+                {paginatedVoters.map((voter) => (
                   <TableRow key={voter.id}>
                     <TableCell className="font-medium">{voter.full_name}</TableCell>
                     <TableCell>{voter.email}</TableCell>
                     <TableCell>{voter.phone || "N/A"}</TableCell>
+                    <TableCell className="capitalize">{voter.gender || "N/A"}</TableCell>
                     <TableCell>
                       {voter.avatar_url ? (
                         <img src={voter.avatar_url} alt={`${voter.full_name} avatar`} className="h-10 w-10 rounded object-cover border" />
@@ -270,11 +282,23 @@ const Voters = () => {
                                 <Label htmlFor="full_name">Full Name</Label>
                                 <Input id="full_name" value={editForm.full_name} onChange={(e) => setEditForm({ ...editForm, full_name: e.target.value })} />
                               </div>
-                              <div>
-                                <Label htmlFor="phone">Phone</Label>
-                                <Input id="phone" value={editForm.phone} onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })} />
-                              </div>
-                              <div className="flex justify-end gap-2">
+                               <div>
+                                 <Label htmlFor="phone">Phone</Label>
+                                 <Input id="phone" value={editForm.phone} onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })} />
+                               </div>
+                               <div>
+                                 <Label htmlFor="gender">Gender</Label>
+                                 <Select value={editForm.gender} onValueChange={(value) => setEditForm({ ...editForm, gender: value })}>
+                                   <SelectTrigger>
+                                     <SelectValue placeholder="Select gender" />
+                                   </SelectTrigger>
+                                   <SelectContent>
+                                     <SelectItem value="male">Male</SelectItem>
+                                     <SelectItem value="female">Female</SelectItem>
+                                   </SelectContent>
+                                 </Select>
+                               </div>
+                               <div className="flex justify-end gap-2">
                                 <Button type="button" variant="outline" onClick={() => setEditDialogOpen(false)}>Cancel</Button>
                                 <Button type="submit">Save</Button>
                               </div>
@@ -324,22 +348,56 @@ const Voters = () => {
                         </Button>
                       </div>
                     </TableCell>
-                  </TableRow>
-                ))}
-                {filteredVoters.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                      No voters found
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      </div>
-    </AdminRoute>
-  );
-};
+                   </TableRow>
+                 ))}
+                 {paginatedVoters.length === 0 && (
+                   <TableRow>
+                     <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                       No voters found
+                     </TableCell>
+                   </TableRow>
+                 )}
+               </TableBody>
+             </Table>
+           </CardContent>
+         </Card>
 
-export default Voters;
+         {/* Pagination */}
+         {totalPages > 1 && (
+           <Card>
+             <CardContent className="pt-6">
+               <div className="flex items-center justify-between">
+                 <p className="text-sm text-muted-foreground">
+                   Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, filteredVoters.length)} of {filteredVoters.length} voters
+                 </p>
+                 <div className="flex items-center gap-2">
+                   <Button
+                     variant="outline"
+                     size="sm"
+                     onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                     disabled={currentPage === 1}
+                   >
+                     <ChevronLeft className="h-4 w-4" />
+                   </Button>
+                   <span className="text-sm">
+                     Page {currentPage} of {totalPages}
+                   </span>
+                   <Button
+                     variant="outline"
+                     size="sm"
+                     onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                     disabled={currentPage === totalPages}
+                   >
+                     <ChevronRight className="h-4 w-4" />
+                   </Button>
+                 </div>
+               </div>
+             </CardContent>
+           </Card>
+         )}
+       </div>
+     </AdminRoute>
+   );
+ };
+
+ export default Voters;

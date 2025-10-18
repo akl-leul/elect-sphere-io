@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { CheckCircle, XCircle, Search, Eye } from "lucide-react";
+import { CheckCircle, XCircle, Search, Eye, ChevronLeft, ChevronRight } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -15,6 +15,8 @@ const Candidates = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCandidate, setSelectedCandidate] = useState<any>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
 
   useEffect(() => {
     fetchCandidates();
@@ -80,6 +82,13 @@ const Candidates = () => {
       candidate.positions?.title?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Pagination
+  const totalPages = Math.ceil(filteredCandidates.length / itemsPerPage);
+  const paginatedCandidates = filteredCandidates.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
   if (loading) {
     return <div className="flex items-center justify-center h-96">Loading...</div>;
   }
@@ -121,7 +130,7 @@ const Candidates = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-                {filteredCandidates.map((candidate) => (
+                {paginatedCandidates.map((candidate) => (
                 <TableRow key={candidate.id}>
                   <TableCell>
                     <div>
@@ -184,9 +193,9 @@ const Candidates = () => {
                   </TableCell>
                 </TableRow>
               ))}
-              {filteredCandidates.length === 0 && (
+              {paginatedCandidates.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                     No candidates found
                   </TableCell>
                 </TableRow>
@@ -195,6 +204,40 @@ const Candidates = () => {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <Card className="mb-6">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-muted-foreground">
+                Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, filteredCandidates.length)} of {filteredCandidates.length} candidates
+              </p>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <span className="text-sm">
+                  Page {currentPage} of {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Dialog open={!!selectedCandidate} onOpenChange={() => setSelectedCandidate(null)}>
         <DialogContent className="max-w-2xl">
