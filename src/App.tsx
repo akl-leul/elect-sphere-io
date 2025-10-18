@@ -19,6 +19,8 @@ import Analytics from "./pages/admin/Analytics";
 import Profile from "./pages/voter/Profile";
 import Vote from "./pages/voter/Vote";
 import CandidateRegister from "./pages/candidate/Register";
+import MyCandidacy from "./pages/candidate/MyCandidacy";
+import CandidatesList from "./pages/Candidates";
 
 const queryClient = new QueryClient();
 
@@ -44,6 +46,8 @@ const App = () => (
           <Route path="/voter/profile" element={<Profile />} />
           <Route path="/voter/vote" element={<Vote />} />
           <Route path="/candidate/register" element={<CandidateRegister />} />
+          <Route path="/candidate/my-candidacy" element={<MyCandidacy />} />
+          <Route path="/candidates" element={<CandidatesList />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

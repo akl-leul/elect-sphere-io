@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { User, Mail, Phone, CheckCircle, XCircle, Upload, Image as ImageIcon, FileText, Loader2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -19,6 +20,7 @@ const Profile = () => {
   const [formData, setFormData] = useState({
     full_name: "",
     phone: "",
+    gender: "" as "male" | "female" | "",
   });
 
   useEffect(() => {
@@ -43,6 +45,7 @@ const Profile = () => {
       setFormData({
         full_name: data.full_name || "",
         phone: data.phone || "",
+        gender: (data.gender || "") as "male" | "female" | "",
       });
     } catch (error: any) {
       toast.error("Failed to fetch profile");
@@ -264,6 +267,23 @@ const Profile = () => {
               <p className="text-xs text-muted-foreground mt-1">
                 Format: +[country code][number]
               </p>
+            </div>
+
+            <div>
+              <Label htmlFor="gender">Gender</Label>
+              <Select
+                value={formData.gender}
+                onValueChange={(value: "male" | "female") => setFormData({ ...formData, gender: value })}
+                required
+              >
+                <SelectTrigger id="gender">
+                  <SelectValue placeholder="Select gender" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="male">Male</SelectItem>
+                  <SelectItem value="female">Female</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div>

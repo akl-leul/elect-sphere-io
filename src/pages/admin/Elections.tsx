@@ -229,16 +229,14 @@ const Elections = () => {
                     />
                   </div>
                 </div>
-                {formData.registration_enabled && (
-                  <div className="flex gap-2 justify-end">
-                    <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
-                      Cancel
-                    </Button>
-                    <Button type="submit">
-                      {editingElection ? "Update" : "Create"} Election
-                    </Button>
-                  </div>
-                )}
+                <div className="flex gap-2 justify-end">
+                  <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button type="submit">
+                    {editingElection ? "Update" : "Create"} Election
+                  </Button>
+                </div>
               </form>
             </DialogContent>
           </Dialog>

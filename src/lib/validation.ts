@@ -21,6 +21,7 @@ export const signupSchema = z.object({
     .min(2, "Name must be at least 2 characters")
     .max(100, "Name too long")
     .regex(/^[a-zA-Z\s]+$/, "Name can only contain letters and spaces"),
+  gender: z.union([z.literal("male"), z.literal("female")]),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords do not match",
   path: ["confirmPassword"],
@@ -69,6 +70,7 @@ export const profileSchema = z.object({
     .regex(/^\+?[1-9]\d{1,14}$/, "Invalid phone number format")
     .optional()
     .or(z.literal("")),
+  gender: z.union([z.literal("male"), z.literal("female")]),
 });
 
 export const adminEmailSchema = z.object({

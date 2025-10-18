@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Vote, Shield } from "lucide-react";
 import { toast } from "sonner";
 import { loginSchema, signupSchema } from "@/lib/validation";
@@ -18,7 +19,8 @@ const Auth = () => {
     email: "", 
     password: "", 
     fullName: "",
-    confirmPassword: ""
+    confirmPassword: "",
+    gender: "" as "male" | "female" | "",
   });
 
   useEffect(() => {
@@ -76,6 +78,7 @@ const Auth = () => {
         options: {
           data: {
             full_name: validated.fullName,
+            gender: validated.gender,
           },
           emailRedirectTo: `${window.location.origin}/`,
         },
@@ -105,11 +108,13 @@ const Auth = () => {
         .single();
       if (!existing) {
         const fullName = (user.user_metadata?.full_name as string) || signupData.fullName || user.email || "";
+        const gender = (user.user_metadata?.gender as "male" | "female") || signupData.gender || "male";
         const { error } = await supabase.from("profiles").insert([
           {
             id: user.id,
             email: user.email as string,
             full_name: fullName,
+            gender: gender,
             is_approved: false,
             is_suspended: false,
           },
@@ -193,6 +198,22 @@ const Auth = () => {
                     onChange={(e) => setSignupData({ ...signupData, email: e.target.value })}
                     required
                   />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="signup-gender">Gender</Label>
+                  <Select
+                    value={signupData.gender}
+                    onValueChange={(value: "male" | "female") => setSignupData({ ...signupData, gender: value })}
+                    required
+                  >
+                    <SelectTrigger id="signup-gender">
+                      <SelectValue placeholder="Select gender" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="male">Male</SelectItem>
+                      <SelectItem value="female">Female</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="signup-password">Password</Label>

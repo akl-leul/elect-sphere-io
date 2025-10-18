@@ -203,6 +203,7 @@ export type Database = {
           device_fingerprint: string | null
           email: string
           full_name: string
+          gender: string | null
           id: string
           identification_url: string | null
           is_approved: boolean | null
@@ -216,6 +217,7 @@ export type Database = {
           device_fingerprint?: string | null
           email: string
           full_name: string
+          gender?: string | null
           id: string
           identification_url?: string | null
           is_approved?: boolean | null
@@ -229,6 +231,7 @@ export type Database = {
           device_fingerprint?: string | null
           email?: string
           full_name?: string
+          gender?: string | null
           id?: string
           identification_url?: string | null
           is_approved?: boolean | null
