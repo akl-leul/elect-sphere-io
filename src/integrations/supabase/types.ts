@@ -57,6 +57,7 @@ export type Database = {
       }
       candidates: {
         Row: {
+          agreed_to_requirements: boolean
           biography: string | null
           campaign_logo_url: string | null
           created_at: string | null
@@ -71,6 +72,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          agreed_to_requirements?: boolean
           biography?: string | null
           campaign_logo_url?: string | null
           created_at?: string | null
@@ -85,6 +87,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          agreed_to_requirements?: boolean
           biography?: string | null
           campaign_logo_url?: string | null
           created_at?: string | null
@@ -118,6 +121,44 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      election_requirements: {
+        Row: {
+          content: string
+          created_at: string
+          document_url: string | null
+          election_id: string
+          id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          document_url?: string | null
+          election_id: string
+          id?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          document_url?: string | null
+          election_id?: string
+          id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "election_requirements_election_id_fkey"
+            columns: ["election_id"]
+            isOneToOne: false
+            referencedRelation: "elections"
             referencedColumns: ["id"]
           },
         ]

@@ -21,7 +21,7 @@ import { cn } from "@/lib/utils";
 import { useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { Vote, Settings, Users, UserCheck, FileText, BarChart3, LayoutGrid, ListChecks, FolderOpen, Trophy, LogOut } from "lucide-react";
+import { Vote, Settings, Users, UserCheck, FileText, BarChart3, LayoutGrid, ListChecks, FolderOpen, Trophy, LogOut, ClipboardCheck } from "lucide-react";
 import ThemeToggle from "@/components/ui/theme-toggle";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -39,6 +39,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
       { to: "/admin/analytics", label: "Analytics", icon: BarChart3 },
       { to: "/admin/elections", label: "Elections", icon: Settings },
       { to: "/admin/positions", label: "Positions", icon: ListChecks },
+      { to: "/admin/requirements", label: "Requirements", icon: ClipboardCheck },
       { to: "/admin/candidates", label: "Candidates", icon: UserCheck },
       { to: "/admin/voters", label: "Voters", icon: Users },
       { to: "/admin/results", label: "Results", icon: Trophy },

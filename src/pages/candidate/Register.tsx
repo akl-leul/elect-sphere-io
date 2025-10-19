@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { UserCheck, Upload, Image as ImageIcon, FileText, Loader2 } from "lucide-react";
+import { UserCheck, Upload, Image as ImageIcon, FileText, Loader2, ExternalLink } from "lucide-react";
 import { candidateSchema } from "@/lib/validation";
 
 const Register = () => {
@@ -19,6 +19,8 @@ const Register = () => {
   const [uploading, setUploading] = useState(false);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [manifestoFile, setManifestoFile] = useState<File | null>(null);
+  const [requirements, setRequirements] = useState<any[]>([]);
+  const [agreedToRequirements, setAgreedToRequirements] = useState(false);
   const [formData, setFormData] = useState({
     election_id: "",
     position_id: "",
@@ -43,10 +45,22 @@ const Register = () => {
         .from("elections")
         .select("*")
         .eq("is_active", true)
-        .eq("registration_enabled", true); // Only fetch elections with registration enabled
+        .eq("registration_enabled", true);
 
       if (error) throw error;
       setElections(data || []);
+      
+      // Fetch requirements for all elections
+      if (data && data.length > 0) {
+        const { data: reqData, error: reqError } = await supabase
+          .from("election_requirements")
+          .select("*")
+          .in("election_id", data.map(e => e.id));
+        
+        if (!reqError) {
+          setRequirements(reqData || []);
+        }
+      }
     } catch (error: any) {
       toast.error("Failed to fetch elections");
     } finally {
@@ -71,6 +85,7 @@ const Register = () => {
 
   const handleElectionChange = (electionId: string) => {
     setFormData({ ...formData, election_id: electionId, position_id: "" });
+    setAgreedToRequirements(false); // Reset agreement when changing election
     fetchPositions(electionId);
   };
 
@@ -150,6 +165,7 @@ const Register = () => {
         campaign_logo_url: logoUrl,
         manifesto_url: manifestoUrl,
         social_links: validated.social_links,
+        agreed_to_requirements: agreedToRequirements,
       }]);
 
       if (error) throw error;
@@ -362,7 +378,52 @@ const Register = () => {
               />
             </div>
 
-            <Button type="submit" className="w-full" disabled={uploading}>
+            {/* Display Requirements if they exist for selected election */}
+            {formData.election_id && requirements.filter(r => r.election_id === formData.election_id).length > 0 && (
+              <div className="space-y-4 border-t pt-4">
+                <h3 className="font-semibold text-lg">Election Requirements & Policies</h3>
+                {requirements
+                  .filter(r => r.election_id === formData.election_id)
+                  .map((req) => (
+                    <Card key={req.id} className="p-4">
+                      <h4 className="font-medium mb-2">{req.title}</h4>
+                      <div className="text-sm text-muted-foreground whitespace-pre-wrap max-h-60 overflow-y-auto border rounded p-3 bg-muted/20">
+                        {req.content}
+                      </div>
+                      {req.document_url && (
+                        <Button
+                          type="button"
+                          variant="link"
+                          size="sm"
+                          className="mt-2 px-0"
+                          onClick={() => window.open(req.document_url, '_blank')}
+                        >
+                          View Original Document
+                        </Button>
+                      )}
+                    </Card>
+                  ))}
+                
+                <div className="flex items-start gap-3 p-4 border rounded bg-muted/10">
+                  <input
+                    type="checkbox"
+                    id="agree-requirements"
+                    checked={agreedToRequirements}
+                    onChange={(e) => setAgreedToRequirements(e.target.checked)}
+                    className="mt-1 h-4 w-4 rounded border-gray-300"
+                    required
+                  />
+                  <label htmlFor="agree-requirements" className="text-sm cursor-pointer">
+                    <span className="font-medium">I agree to all the requirements and policies</span>
+                    <p className="text-muted-foreground mt-1">
+                      By checking this box, I confirm that I have read, understood, and agree to comply with all the election requirements, policies, and regulations stated above.
+                    </p>
+                  </label>
+                </div>
+              </div>
+            )}
+
+            <Button type="submit" className="w-full" disabled={uploading || (requirements.filter(r => r.election_id === formData.election_id).length > 0 && !agreedToRequirements)}>
               {uploading ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
