@@ -30,6 +30,7 @@ const Files = () => {
   const [objects, setObjects] = useState<Record<string, StorageObject[]>>({});
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
+  const [selected, setSelected] = useState<string[]>([]);
 
   useEffect(() => {
     refreshAll();
@@ -45,6 +46,7 @@ const Files = () => {
   const refreshBucket = async (bucketId: string) => {
     try {
       setLoading(true);
+
       // List recursively by using "list" on root prefix and delimiter undefined
       const { data, error } = await supabase.storage.from(bucketId).list("", { limit: 1000, offset: 0, sortBy: { column: "name", order: "asc" } });
       if (error) throw error;
@@ -92,6 +94,12 @@ const Files = () => {
       }
 
       setObjects((prev) => ({ ...prev, [bucketId]: all }));
+      setSelected((prevSelected) =>
+        prevSelected.filter(
+          id =>
+            all.some(file => file.id === id)
+        )
+      ); // Remove any selected that are gone after refresh
     } catch (e: any) {
       toast.error(`Failed to list ${bucketId}: ${e.message}`);
     } finally {
@@ -139,8 +147,44 @@ const Files = () => {
     }
   };
 
+  // Bulk delete handler
+  const handleBulkDelete = async () => {
+    if (!selected.length) {
+      toast.error("No files selected");
+      return;
+    }
+    if (!confirm(`Delete ${selected.length} selected files? This cannot be undone.`)) return;
+    try {
+      const { error } = await supabase.storage.from(activeBucket).remove(selected);
+      if (error) throw error;
+      toast.success("Selected files deleted");
+      refreshBucket(activeBucket);
+      setSelected([]);
+    } catch (e: any) {
+      toast.error("Failed to delete selected files");
+    }
+  };
+
   const isImage = (name: string) => /\.(png|jpg|jpeg|webp|gif)$/i.test(name);
   const isDoc = (name: string) => /\.(pdf|docx?|txt)$/i.test(name);
+
+  // Multi-select logic
+  const currentFiles = filtered.length ? filtered : (objects[activeBucket] || []);
+  const selectAll = currentFiles.length > 0 && currentFiles.every(obj => selected.includes(obj.id));
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelected(currentFiles.map(obj => obj.id));
+    } else {
+      setSelected([]);
+    }
+  };
+  const handleSelect = (id: string) => {
+    setSelected(prev =>
+      prev.includes(id)
+        ? prev.filter(_id => _id !== id)
+        : [...prev, id]
+    );
+  };
 
   return (
     <AdminRoute>
@@ -166,6 +210,11 @@ const Files = () => {
               <RefreshCw className="h-4 w-4 mr-2" />
               Refresh All
             </Button>
+            <Button variant="destructive" onClick={handleBulkDelete} disabled={loading || !selected.length}>
+              <Trash2 className="h-4 w-4 mr-2" />
+              Bulk Delete
+            </Button>
+            <span className="text-sm text-muted-foreground ml-2">{selected.length} selected</span>
           </CardContent>
         </Card>
 
@@ -189,16 +238,31 @@ const Files = () => {
                   <Table>
                     <TableHeader>
                       <TableRow>
+                        <TableHead>
+                          <input
+                            type="checkbox"
+                            checked={selectAll}
+                            indeterminate={!selectAll && selected.some(id => currentFiles.some(obj => obj.id === id))}
+                            onChange={e => handleSelectAll(e.target.checked)}
+                          />
+                        </TableHead>
                         <TableHead>Preview</TableHead>
                         <TableHead>Name</TableHead>
                         <TableHead>Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {(filtered.length ? filtered : objects[b.id] || []).map((obj) => {
+                      {currentFiles.map((obj) => {
                         const previewUrl = b.public ? getPublicUrl(b.id, obj.name) : undefined;
                         return (
                           <TableRow key={`${b.id}-${obj.name}`}>
+                            <TableCell>
+                              <input
+                                type="checkbox"
+                                checked={selected.includes(obj.id)}
+                                onChange={() => handleSelect(obj.id)}
+                              />
+                            </TableCell>
                             <TableCell>
                               {previewUrl && isImage(obj.name) ? (
                                 <img src={previewUrl} alt={obj.name} className="h-12 w-12 rounded object-cover border" />
@@ -227,9 +291,9 @@ const Files = () => {
                           </TableRow>
                         );
                       })}
-                      {((filtered.length === 0) && ((objects[b.id] || []).length === 0)) && (
+                      {currentFiles.length === 0 && (
                         <TableRow>
-                          <TableCell colSpan={3} className="text-center py-8 text-muted-foreground">
+                          <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
                             No files found
                           </TableCell>
                         </TableRow>
@@ -247,5 +311,3 @@ const Files = () => {
 };
 
 export default Files;
-
-

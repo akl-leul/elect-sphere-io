@@ -13,7 +13,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from "@/components/ui/label";
 
 const Voters = () => {
-  // no-op state removed; we will generate signed links on demand
   const [voters, setVoters] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -22,12 +21,14 @@ const Voters = () => {
   const [editForm, setEditForm] = useState({ full_name: "", phone: "", gender: "" });
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
+  const [selected, setSelected] = useState<string[]>([]);
 
   useEffect(() => {
     fetchVoters();
   }, []);
 
   const fetchVoters = async () => {
+    setLoading(true);
     try {
       const { data, error } = await supabase
         .from("profiles")
@@ -40,6 +41,7 @@ const Voters = () => {
       toast.error("Failed to fetch voters");
     } finally {
       setLoading(false);
+      setSelected([]);
     }
   };
 
@@ -99,6 +101,25 @@ const Voters = () => {
     }
   };
 
+  // BULK approve
+  const handleBulkApprove = async () => {
+    if (!selected.length) {
+      toast.error("No voters selected");
+      return;
+    }
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ is_approved: true })
+        .in("id", selected);
+      if (error) throw error;
+      toast.success("Selected voters approved");
+      fetchVoters();
+    } catch (error: any) {
+      toast.error(error.message);
+    }
+  };
+
   const handleSuspend = async (voterId: string, suspend: boolean) => {
     try {
       const { error } = await supabase
@@ -108,6 +129,64 @@ const Voters = () => {
 
       if (error) throw error;
       toast.success(suspend ? "Voter suspended" : "Voter reactivated");
+      fetchVoters();
+    } catch (error: any) {
+      toast.error(error.message);
+    }
+  };
+
+  // BULK suspend
+  const handleBulkSuspend = async (suspend: boolean) => {
+    if (!selected.length) {
+      toast.error("No voters selected");
+      return;
+    }
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ is_suspended: suspend })
+        .in("id", selected);
+      if (error) throw error;
+      toast.success(suspend ? "Selected voters suspended" : "Selected voters reactivated");
+      fetchVoters();
+    } catch (error: any) {
+      toast.error(error.message);
+    }
+  };
+
+  // BULK delete
+  const handleBulkDelete = async () => {
+    if (!selected.length) {
+      toast.error("No voters selected");
+      return;
+    }
+    if (!confirm(`Delete ${selected.length} voters? This can't be undone.`)) return;
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .delete()
+        .in("id", selected);
+      if (error) throw error;
+      toast.success("Selected voters deleted");
+      fetchVoters();
+    } catch (error: any) {
+      toast.error(error.message);
+    }
+  };
+
+  // BULK reject (set is_approved: false)
+  const handleBulkReject = async () => {
+    if (!selected.length) {
+      toast.error("No voters selected");
+      return;
+    }
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ is_approved: false })
+        .in("id", selected);
+      if (error) throw error;
+      toast.success("Selected voters rejected");
       fetchVoters();
     } catch (error: any) {
       toast.error(error.message);
@@ -152,7 +231,6 @@ const Voters = () => {
     }
   };
 
-  // New handler: delete voter
   const handleDelete = async (voterId: string) => {
     if (!confirm('Are you sure you want to delete this voter? This action cannot be undone.')) return;
     try {
@@ -181,6 +259,33 @@ const Voters = () => {
     currentPage * itemsPerPage
   );
 
+  // Derived selectAll from current selection and visible paginated rows
+  const selectAll = paginatedVoters.length > 0 && paginatedVoters.every(v => selected.includes(v.id));
+
+  // Handler for master checkbox
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      // Add ids from visible page if not already selected
+      setSelected(prev => {
+        const newSet = new Set(prev);
+        paginatedVoters.forEach(voter => newSet.add(voter.id));
+        return Array.from(newSet);
+      });
+    } else {
+      // Remove ids of visible page from selection
+      setSelected(prev => prev.filter(id => !paginatedVoters.some(v => v.id === id)));
+    }
+  };
+
+  // Handler for single selection
+  const handleSelect = (id: string) => {
+    setSelected(prev =>
+      prev.includes(id)
+        ? prev.filter((sid) => sid !== id)
+        : [...prev, id]
+    );
+  };
+
   if (loading) {
     return <div className="flex items-center justify-center h-96">Loading...</div>;
   }
@@ -190,7 +295,17 @@ const Voters = () => {
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
           <h1 className="text-4xl font-bold mb-2">Voter Management</h1>
-          <p className="text-muted-foreground">Approve, suspend, or manage registered voters</p>
+          <p className="text-muted-foreground">Approve, suspend, reject, or manage registered voters</p>
+        </div>
+
+        {/* Bulk action bar */}
+        <div className="mb-4 flex gap-2">
+          <Button size="sm" variant="default" onClick={handleBulkApprove}>Bulk Approve</Button>
+          <Button size="sm" variant="destructive" onClick={handleBulkDelete}>Bulk Delete</Button>
+          <Button size="sm" variant="outline" onClick={() => handleBulkSuspend(true)}>Bulk Suspend</Button>
+          <Button size="sm" variant="outline" onClick={() => handleBulkSuspend(false)}>Bulk Reactivate</Button>
+          <Button size="sm" variant="outline" onClick={handleBulkReject}>Bulk Reject</Button>
+          <span className="text-sm text-muted-foreground ml-2">{selected.length} selected</span>
         </div>
 
         <Card className="mb-6">
@@ -212,6 +327,14 @@ const Voters = () => {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>
+                    <input
+                      type="checkbox"
+                      checked={selectAll}
+                      indeterminate={!selectAll && selected.some(id => paginatedVoters.some(v => v.id === id))}
+                      onChange={e => handleSelectAll(e.target.checked)}
+                    />
+                  </TableHead>
                   <TableHead>Name</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Phone</TableHead>
@@ -226,6 +349,13 @@ const Voters = () => {
               <TableBody>
                 {paginatedVoters.map((voter) => (
                   <TableRow key={voter.id}>
+                    <TableCell>
+                      <input
+                        type="checkbox"
+                        checked={selected.includes(voter.id)}
+                        onChange={() => handleSelect(voter.id)}
+                      />
+                    </TableCell>
                     <TableCell className="font-medium">{voter.full_name}</TableCell>
                     <TableCell>{voter.email}</TableCell>
                     <TableCell>{voter.phone || "N/A"}</TableCell>
@@ -299,9 +429,9 @@ const Voters = () => {
                                  </Select>
                                </div>
                                <div className="flex justify-end gap-2">
-                                <Button type="button" variant="outline" onClick={() => setEditDialogOpen(false)}>Cancel</Button>
-                                <Button type="submit">Save</Button>
-                              </div>
+                                 <Button type="button" variant="outline" onClick={() => setEditDialogOpen(false)}>Cancel</Button>
+                                 <Button type="submit">Save</Button>
+                               </div>
                             </form>
                           </DialogContent>
                         </Dialog>
@@ -348,56 +478,56 @@ const Voters = () => {
                         </Button>
                       </div>
                     </TableCell>
-                   </TableRow>
-                 ))}
-                 {paginatedVoters.length === 0 && (
-                   <TableRow>
-                     <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
-                       No voters found
-                     </TableCell>
-                   </TableRow>
-                 )}
-               </TableBody>
-             </Table>
-           </CardContent>
-         </Card>
+                  </TableRow>
+                ))}
+                {paginatedVoters.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
+                      No voters found
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
 
-         {/* Pagination */}
-         {totalPages > 1 && (
-           <Card>
-             <CardContent className="pt-6">
-               <div className="flex items-center justify-between">
-                 <p className="text-sm text-muted-foreground">
-                   Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, filteredVoters.length)} of {filteredVoters.length} voters
-                 </p>
-                 <div className="flex items-center gap-2">
-                   <Button
-                     variant="outline"
-                     size="sm"
-                     onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                     disabled={currentPage === 1}
-                   >
-                     <ChevronLeft className="h-4 w-4" />
-                   </Button>
-                   <span className="text-sm">
-                     Page {currentPage} of {totalPages}
-                   </span>
-                   <Button
-                     variant="outline"
-                     size="sm"
-                     onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                     disabled={currentPage === totalPages}
-                   >
-                     <ChevronRight className="h-4 w-4" />
-                   </Button>
-                 </div>
-               </div>
-             </CardContent>
-           </Card>
-         )}
-       </div>
-     </AdminRoute>
-   );
- };
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-muted-foreground">
+                  Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, filteredVoters.length)} of {filteredVoters.length} voters
+                </p>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    disabled={currentPage === 1}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <span className="text-sm">
+                    Page {currentPage} of {totalPages}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    disabled={currentPage === totalPages}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    </AdminRoute>
+  );
+};
 
- export default Voters;
+export default Voters;
