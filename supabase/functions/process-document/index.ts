@@ -7,25 +7,31 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-serve(async (req) => {
+serve(async (req: Request) => {
+  // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    // Validate Presence of Google Gemini API Key
     const GEMINI_API_KEY = Deno.env.get("GOOGLE_GEMINI_API_KEY");
     if (!GEMINI_API_KEY) {
       console.error("GOOGLE_GEMINI_API_KEY not configured");
-      return new Response(JSON.stringify({ error: "API key not configured" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({ error: "API key not configured" }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
     }
 
+    // Parse and Validate Form Data
     const formData = await req.formData();
-    const file = formData.get("file") as File;
-    const electionId = formData.get("electionId") as string;
-    const title = formData.get("title") as string;
+    const file = formData.get("file") as File | null;
+    const electionId = formData.get("electionId") as string | null;
+    const title = formData.get("title") as string | null;
 
     if (!file || !electionId || !title) {
       return new Response(
@@ -47,18 +53,32 @@ serve(async (req) => {
     );
 
     // Initialize Supabase client
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-    );
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (!supabaseUrl || !supabaseKey) {
+      console.error("Supabase credentials not configured");
+      return new Response(
+        JSON.stringify({ error: "Supabase credentials missing" }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
+    }
+    const supabase = createClient(supabaseUrl, supabaseKey);
 
     console.log("Supabase client initialized");
 
-    // Upload file to storage
-    const fileExt = file.name.split(".").pop();
-    const fileName = `requirements/${electionId}/${Date.now()}.${fileExt}`;
+    // File naming and extension handling
+    const fileExt = (() => {
+      const splitName = file.name.split(".");
+      return splitName.length > 1 ? splitName.pop() : "";
+    })();
+    const fileName = `requirements/${electionId}/${Date.now()}${fileExt ? "." + fileExt : ""}`;
 
     const fileBuffer = await file.arrayBuffer();
+
+    // Upload file to Supabase Storage
     const { error: uploadError } = await supabase.storage
       .from("candidate-files")
       .upload(fileName, fileBuffer, {
@@ -74,15 +94,20 @@ serve(async (req) => {
 
     console.log("File uploaded to Supabase storage");
 
+    // Get public URL for the uploaded file
     const {
       data: { publicUrl },
+      error: urlError,
     } = supabase.storage.from("candidate-files").getPublicUrl(fileName);
-
+    if (urlError || !publicUrl) {
+      console.error("Error getting public URL:", urlError);
+      throw new Error("Failed to obtain public URL for uploaded file");
+    }
     console.log("Public URL obtained:", publicUrl);
 
+    // Prepare form data for Gemini API upload
     console.log("Uploading file to Gemini File API...");
 
-    // Upload to Gemini File API
     const uploadUrl = `https://generativelanguage.googleapis.com/upload/v1beta/files?key=${GEMINI_API_KEY}`;
     const uploadForm = new FormData();
     uploadForm.append(
@@ -93,6 +118,7 @@ serve(async (req) => {
     );
     uploadForm.append("file", file);
 
+    // Upload to Gemini API
     const uploadResponse = await fetch(uploadUrl, {
       method: "POST",
       body: uploadForm,
@@ -107,13 +133,15 @@ serve(async (req) => {
     }
 
     const uploadData = await uploadResponse.json();
-    const fileUri = uploadData.file.uri;
+    const fileUri = uploadData.file?.uri;
+    if (!fileUri) {
+      throw new Error("Gemini file URI is missing in response");
+    }
 
     console.log("File uploaded to Gemini, URI:", fileUri);
 
+    // Call Gemini API to extract text
     console.log("Calling Gemini API to extract text...");
-
-    // Call Gemini API to extract text using the uploaded file
     const geminiResponse = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
       {
@@ -124,7 +152,8 @@ serve(async (req) => {
             {
               parts: [
                 {
-                  text: "Extract all text from this document. Format it clearly with proper headings and structure. Include all requirements, policies, and rules mentioned.",
+                  text:
+                    "Extract all text from this document. Format it clearly with proper headings and structure. Include all requirements, policies, and rules mentioned.",
                 },
                 {
                   file_data: {
@@ -151,7 +180,7 @@ serve(async (req) => {
     }
 
     const geminiData = await geminiResponse.json();
-    const extractedText =
+    const extractedText: string =
       geminiData.candidates?.[0]?.content?.parts?.[0]?.text || "";
 
     if (!extractedText) {
@@ -160,7 +189,7 @@ serve(async (req) => {
 
     console.log("Text extracted successfully, length:", extractedText.length);
 
-    // Save to database
+    // Save requirements to Supabase database
     const { data: requirement, error: dbError } = await supabase
       .from("election_requirements")
       .insert({
@@ -179,6 +208,7 @@ serve(async (req) => {
 
     console.log("Requirements saved successfully");
 
+    // Success response
     return new Response(
       JSON.stringify({
         success: true,
@@ -190,10 +220,11 @@ serve(async (req) => {
       },
     );
   } catch (error: any) {
+    // Comprehensive error reporting
     console.error("Error in process-document function:", error);
     return new Response(
       JSON.stringify({
-        error: error.message || "Failed to process document",
+        error: error?.message || "Failed to process document",
       }),
       {
         status: 500,
