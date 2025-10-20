@@ -97,12 +97,7 @@ serve(async (req: Request) => {
     // Get public URL for the uploaded file
     const {
       data: { publicUrl },
-      error: urlError,
     } = supabase.storage.from("candidate-files").getPublicUrl(fileName);
-    if (urlError || !publicUrl) {
-      console.error("Error getting public URL:", urlError);
-      throw new Error("Failed to obtain public URL for uploaded file");
-    }
     console.log("Public URL obtained:", publicUrl);
 
     // Prepare form data for Gemini API upload
