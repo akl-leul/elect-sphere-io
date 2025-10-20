@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -22,6 +22,7 @@ const Voters = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
   const [selected, setSelected] = useState<string[]>([]);
+  const selectAllRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetchVoters();
@@ -261,6 +262,13 @@ const Voters = () => {
 
   // Derived selectAll from current selection and visible paginated rows
   const selectAll = paginatedVoters.length > 0 && paginatedVoters.every(v => selected.includes(v.id));
+  const someSelected = !selectAll && selected.some(id => paginatedVoters.some(v => v.id === id));
+
+  useEffect(() => {
+    if (selectAllRef.current) {
+      selectAllRef.current.indeterminate = someSelected;
+    }
+  }, [someSelected]);
 
   // Handler for master checkbox
   const handleSelectAll = (checked: boolean) => {
@@ -329,9 +337,9 @@ const Voters = () => {
                 <TableRow>
                   <TableHead>
                     <input
+                      ref={selectAllRef}
                       type="checkbox"
                       checked={selectAll}
-                      indeterminate={!selectAll && selected.some(id => paginatedVoters.some(v => v.id === id))}
                       onChange={e => handleSelectAll(e.target.checked)}
                     />
                   </TableHead>

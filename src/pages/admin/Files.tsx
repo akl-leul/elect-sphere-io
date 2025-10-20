@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import AdminRoute from "@/components/auth/AdminRoute";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -31,6 +31,7 @@ const Files = () => {
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<string[]>([]);
+  const selectAllRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     refreshAll();
@@ -171,6 +172,14 @@ const Files = () => {
   // Multi-select logic
   const currentFiles = filtered.length ? filtered : (objects[activeBucket] || []);
   const selectAll = currentFiles.length > 0 && currentFiles.every(obj => selected.includes(obj.id));
+  const someSelected = !selectAll && selected.some(id => currentFiles.some(obj => obj.id === id));
+
+  useEffect(() => {
+    if (selectAllRef.current) {
+      selectAllRef.current.indeterminate = someSelected;
+    }
+  }, [someSelected]);
+
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
       setSelected(currentFiles.map(obj => obj.id));
@@ -240,9 +249,9 @@ const Files = () => {
                       <TableRow>
                         <TableHead>
                           <input
+                            ref={selectAllRef}
                             type="checkbox"
                             checked={selectAll}
-                            indeterminate={!selectAll && selected.some(id => currentFiles.some(obj => obj.id === id))}
                             onChange={e => handleSelectAll(e.target.checked)}
                           />
                         </TableHead>
