@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Plus, Trash2, FileText, Loader2, ExternalLink } from "lucide-react";
+import { Plus, Trash2, FileText, Edit } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import AdminRoute from "@/components/auth/AdminRoute";
@@ -15,12 +15,13 @@ const Requirements = () => {
   const [requirements, setRequirements] = useState<any[]>([]);
   const [elections, setElections] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [uploading, setUploading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [currentId, setCurrentId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     election_id: "",
     title: "",
-    file: null as File | null,
+    content: "",
   });
 
   useEffect(() => {
@@ -48,35 +49,57 @@ const Requirements = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.file || !formData.election_id || !formData.title) {
-      toast.error("Please fill all fields and select a file");
+    if (!formData.election_id || !formData.title || !formData.content) {
+      toast.error("Please fill all fields");
       return;
     }
 
-    setUploading(true);
     try {
-      const form = new FormData();
-      form.append('file', formData.file);
-      form.append('electionId', formData.election_id);
-      form.append('title', formData.title);
+      if (editMode && currentId) {
+        const { error } = await supabase
+          .from("election_requirements")
+          .update({
+            election_id: formData.election_id,
+            title: formData.title,
+            content: formData.content,
+          })
+          .eq("id", currentId);
 
-      const { data, error } = await supabase.functions.invoke('process-document', {
-        body: form,
-      });
+        if (error) throw error;
+        toast.success("Requirements updated successfully!");
+      } else {
+        const { error } = await supabase
+          .from("election_requirements")
+          .insert({
+            election_id: formData.election_id,
+            title: formData.title,
+            content: formData.content,
+          });
 
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
+        if (error) throw error;
+        toast.success("Requirements added successfully!");
+      }
 
-      toast.success("Requirements document processed and saved successfully!");
       setDialogOpen(false);
-      setFormData({ election_id: "", title: "", file: null });
+      setFormData({ election_id: "", title: "", content: "" });
+      setEditMode(false);
+      setCurrentId(null);
       fetchData();
     } catch (error: any) {
-      console.error('Upload error:', error);
-      toast.error(error.message || "Failed to process document");
-    } finally {
-      setUploading(false);
+      console.error("Save error:", error);
+      toast.error(error.message || "Failed to save requirements");
     }
+  };
+
+  const handleEdit = (req: any) => {
+    setFormData({
+      election_id: req.election_id,
+      title: req.title,
+      content: req.content,
+    });
+    setCurrentId(req.id);
+    setEditMode(true);
+    setDialogOpen(true);
   };
 
   const handleDelete = async (id: string) => {
@@ -96,6 +119,30 @@ const Requirements = () => {
     }
   };
 
+  const handleOpenNew = () => {
+    setFormData({ election_id: "", title: "", content: "" });
+    setEditMode(false);
+    setCurrentId(null);
+    setDialogOpen(true);
+  };
+
+  const renderFormattedContent = (content: string) => {
+    // Simple markdown-like rendering
+    let formatted = content
+      // Headers
+      .replace(/^# (.+)$/gm, '<h1 class="text-2xl font-bold mb-2">$1</h1>')
+      // Bold
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      // Italic
+      .replace(/\*(.+?)\*/g, '<em>$1</em>')
+      // Lists
+      .replace(/^- (.+)$/gm, '<li class="ml-4">• $1</li>')
+      // Line breaks
+      .replace(/\n/g, '<br />');
+
+    return formatted;
+  };
+
   if (loading) {
     return <div className="flex items-center justify-center h-96">Loading...</div>;
   }
@@ -106,20 +153,20 @@ const Requirements = () => {
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-4xl font-bold mb-2">Election Requirements</h1>
-            <p className="text-muted-foreground">Upload and manage election requirements documents</p>
+            <p className="text-muted-foreground">Create and manage election requirements</p>
           </div>
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
-              <Button>
+              <Button onClick={handleOpenNew}>
                 <Plus className="h-4 w-4 mr-2" />
-                Upload Requirements
+                Add Requirements
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="max-w-2xl">
               <DialogHeader>
-                <DialogTitle>Upload Requirements Document</DialogTitle>
+                <DialogTitle>{editMode ? "Edit Requirements" : "Add Requirements"}</DialogTitle>
                 <DialogDescription>
-                  Upload a PDF or document containing election requirements. Google Gemini will extract the text automatically.
+                  Use markdown formatting: # for heading, **bold**, *italic*, - for list items
                 </DialogDescription>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
@@ -155,28 +202,23 @@ const Requirements = () => {
                 </div>
 
                 <div>
-                  <Label htmlFor="file">Upload Document</Label>
-                  <Input
-                    id="file"
-                    type="file"
-                    accept=".pdf,.doc,.docx"
-                    onChange={(e) => setFormData({ ...formData, file: e.target.files?.[0] || null })}
+                  <Label htmlFor="content">Requirements Content</Label>
+                  <Textarea
+                    id="content"
+                    value={formData.content}
+                    onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+                    placeholder="Enter requirements with markdown formatting..."
+                    rows={12}
+                    className="font-mono text-sm"
                     required
                   />
                   <p className="text-xs text-muted-foreground mt-1">
-                    Supported: PDF, DOC, DOCX • Max 20MB
+                    Formatting: # Heading | **bold** | *italic* | - list item
                   </p>
                 </div>
 
-                <Button type="submit" className="w-full" disabled={uploading}>
-                  {uploading ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Processing with AI...
-                    </>
-                  ) : (
-                    "Upload & Process"
-                  )}
+                <Button type="submit" className="w-full">
+                  {editMode ? "Update Requirements" : "Add Requirements"}
                 </Button>
               </form>
             </DialogContent>
@@ -188,7 +230,7 @@ const Requirements = () => {
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">
                 <FileText className="h-12 w-12 text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">No requirements uploaded yet</p>
+                <p className="text-muted-foreground">No requirements added yet</p>
               </CardContent>
             </Card>
           ) : (
@@ -206,16 +248,14 @@ const Requirements = () => {
                       </CardDescription>
                     </div>
                     <div className="flex gap-2">
-                      {req.document_url && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => window.open(req.document_url, '_blank')}
-                        >
-                          <ExternalLink className="h-4 w-4 mr-1" />
-                          View Document
-                        </Button>
-                      )}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleEdit(req)}
+                      >
+                        <Edit className="h-4 w-4 mr-1" />
+                        Edit
+                      </Button>
                       <Button
                         size="sm"
                         variant="destructive"
@@ -227,14 +267,12 @@ const Requirements = () => {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <Textarea
-                    value={req.content}
-                    readOnly
-                    rows={8}
-                    className="resize-none font-mono text-sm"
+                  <div 
+                    className="prose prose-sm max-w-none"
+                    dangerouslySetInnerHTML={{ __html: renderFormattedContent(req.content) }}
                   />
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Uploaded: {new Date(req.created_at).toLocaleString()}
+                  <p className="text-xs text-muted-foreground mt-4">
+                    Last updated: {new Date(req.updated_at).toLocaleString()}
                   </p>
                 </CardContent>
               </Card>

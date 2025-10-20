@@ -129,7 +129,6 @@ export type Database = {
         Row: {
           content: string
           created_at: string
-          document_url: string | null
           election_id: string
           id: string
           title: string
@@ -138,7 +137,6 @@ export type Database = {
         Insert: {
           content: string
           created_at?: string
-          document_url?: string | null
           election_id: string
           id?: string
           title: string
@@ -147,7 +145,6 @@ export type Database = {
         Update: {
           content?: string
           created_at?: string
-          document_url?: string | null
           election_id?: string
           id?: string
           title?: string
