@@ -4,12 +4,44 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { CheckCircle, XCircle, Search, Ban, UserCheck, Image as ImageIcon, FileText, ExternalLink, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  CheckCircle,
+  XCircle,
+  Search,
+  Ban,
+  UserCheck,
+  Image as ImageIcon,
+  FileText,
+  ExternalLink,
+  Trash2,
+  ChevronLeft,
+  ChevronRight,
+  Lock,
+} from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import AdminRoute from "@/components/auth/AdminRoute";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 
 const Voters = () => {
@@ -18,7 +50,15 @@ const Voters = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingVoter, setEditingVoter] = useState<any>(null);
-  const [editForm, setEditForm] = useState({ full_name: "", phone: "", gender: "" });
+  const [editForm, setEditForm] = useState({
+    full_name: "",
+    phone: "",
+    gender: "",
+  });
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+  const [passwordVoter, setPasswordVoter] = useState<any>(null);
+  const [newPassword, setNewPassword] = useState("");
+  const [passwordUpdating, setPasswordUpdating] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
   const [selected, setSelected] = useState<string[]>([]);
@@ -49,16 +89,18 @@ const Voters = () => {
   const resolveObjectPath = (value: string): string => {
     try {
       const url = new URL(value);
-      const publicIdx = url.pathname.indexOf('/object/');
+      const publicIdx = url.pathname.indexOf("/object/");
       if (publicIdx !== -1) {
-        const afterObject = url.pathname.substring(publicIdx + '/object/'.length);
-        const parts = afterObject.split('/');
-        const startIdx = parts[0] === 'public' || parts[0] === 'signed' ? 1 : 0;
+        const afterObject = url.pathname.substring(
+          publicIdx + "/object/".length,
+        );
+        const parts = afterObject.split("/");
+        const startIdx = parts[0] === "public" || parts[0] === "signed" ? 1 : 0;
         const bucket = parts[startIdx];
-        const key = parts.slice(startIdx + 1).join('/');
-        if (bucket === 'voter-documents') return key;
+        const key = parts.slice(startIdx + 1).join("/");
+        if (bucket === "voter-documents") return key;
       }
-      const marker = '/voter-documents/';
+      const marker = "/voter-documents/";
       const idx = value.indexOf(marker);
       if (idx !== -1) return value.substring(idx + marker.length);
     } catch (_) {
@@ -70,16 +112,20 @@ const Voters = () => {
   const openId = async (path: string) => {
     try {
       const key = resolveObjectPath(path);
-      const { data, error } = await supabase.storage.from('voter-documents').createSignedUrl(key, 60);
-      if (error || !data?.signedUrl) throw error || new Error('No URL');
-      window.open(data.signedUrl, '_blank', 'noopener');
+      const { data, error } = await supabase.storage
+        .from("voter-documents")
+        .createSignedUrl(key, 60);
+      if (error || !data?.signedUrl) throw error || new Error("No URL");
+      window.open(data.signedUrl, "_blank", "noopener");
     } catch (e: any) {
       try {
         const key = resolveObjectPath(path);
-        const { data: fileData, error: dlErr } = await supabase.storage.from('voter-documents').download(key);
-        if (dlErr || !fileData) throw dlErr || new Error('No file');
+        const { data: fileData, error: dlErr } = await supabase.storage
+          .from("voter-documents")
+          .download(key);
+        if (dlErr || !fileData) throw dlErr || new Error("No file");
         const url = URL.createObjectURL(fileData);
-        window.open(url, '_blank', 'noopener');
+        window.open(url, "_blank", "noopener");
         setTimeout(() => URL.revokeObjectURL(url), 60_000);
       } catch (err) {
         toast.error("Failed to open ID document");
@@ -148,7 +194,9 @@ const Voters = () => {
         .update({ is_suspended: suspend })
         .in("id", selected);
       if (error) throw error;
-      toast.success(suspend ? "Selected voters suspended" : "Selected voters reactivated");
+      toast.success(
+        suspend ? "Selected voters suspended" : "Selected voters reactivated",
+      );
       fetchVoters();
     } catch (error: any) {
       toast.error(error.message);
@@ -161,7 +209,8 @@ const Voters = () => {
       toast.error("No voters selected");
       return;
     }
-    if (!confirm(`Delete ${selected.length} voters? This can't be undone.`)) return;
+    if (!confirm(`Delete ${selected.length} voters? This can't be undone.`))
+      return;
     try {
       const { error } = await supabase
         .from("profiles")
@@ -196,7 +245,11 @@ const Voters = () => {
 
   const handleOpenEdit = (voter: any) => {
     setEditingVoter(voter);
-    setEditForm({ full_name: voter.full_name || "", phone: voter.phone || "", gender: voter.gender || "" });
+    setEditForm({
+      full_name: voter.full_name || "",
+      phone: voter.phone || "",
+      gender: voter.gender || "",
+    });
     setEditDialogOpen(true);
   };
 
@@ -205,64 +258,112 @@ const Voters = () => {
     if (!editingVoter) return;
     try {
       const { error } = await supabase
-        .from('profiles')
-        .update({ full_name: editForm.full_name, phone: editForm.phone, gender: editForm.gender })
-        .eq('id', editingVoter.id);
+        .from("profiles")
+        .update({
+          full_name: editForm.full_name,
+          phone: editForm.phone,
+          gender: editForm.gender,
+        })
+        .eq("id", editingVoter.id);
       if (error) throw error;
-      toast.success('Voter updated');
+      toast.success("Voter updated");
       setEditDialogOpen(false);
       fetchVoters();
     } catch (err: any) {
-      toast.error(err.message || 'Update failed');
+      toast.error(err.message || "Update failed");
     }
   };
 
   const handleClearId = async (voterId: string) => {
-    if (!confirm('Remove identification document for this voter?')) return;
+    if (!confirm("Remove identification document for this voter?")) return;
     try {
       const { error } = await supabase
-        .from('profiles')
+        .from("profiles")
         .update({ identification_url: null })
-        .eq('id', voterId);
+        .eq("id", voterId);
       if (error) throw error;
-      toast.success('ID document cleared');
+      toast.success("ID document cleared");
       fetchVoters();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to clear');
+      toast.error(err.message || "Failed to clear");
     }
   };
 
   const handleDelete = async (voterId: string) => {
-    if (!confirm('Are you sure you want to delete this voter? This action cannot be undone.')) return;
+    if (
+      !confirm(
+        "Are you sure you want to delete this voter? This action cannot be undone.",
+      )
+    )
+      return;
     try {
       const { error } = await supabase
-        .from('profiles')
+        .from("profiles")
         .delete()
-        .eq('id', voterId);
+        .eq("id", voterId);
       if (error) throw error;
-      toast.success('Voter deleted successfully');
+      toast.success("Voter deleted successfully");
       fetchVoters();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to delete voter');
+      toast.error(err.message || "Failed to delete voter");
+    }
+  };
+
+  const handleOpenPasswordDialog = (voter: any) => {
+    setPasswordVoter(voter);
+    setNewPassword("");
+    setPasswordDialogOpen(true);
+  };
+
+  const handlePasswordUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!passwordVoter || !newPassword) return;
+
+    setPasswordUpdating(true);
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session) throw new Error("Not authenticated");
+
+      const response = await supabase.functions.invoke("update-user-password", {
+        body: {
+          user_id: passwordVoter.id,
+          new_password: newPassword,
+        },
+      });
+
+      if (response.error) throw response.error;
+
+      toast.success("Password updated successfully");
+      setPasswordDialogOpen(false);
+    } catch (error: any) {
+      toast.error(error.message || "Failed to update password");
+    } finally {
+      setPasswordUpdating(false);
     }
   };
 
   const filteredVoters = voters.filter(
     (voter) =>
       voter.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      voter.email?.toLowerCase().includes(searchTerm.toLowerCase())
+      voter.email?.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   // Pagination
   const totalPages = Math.ceil(filteredVoters.length / itemsPerPage);
   const paginatedVoters = filteredVoters.slice(
     (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
+    currentPage * itemsPerPage,
   );
 
   // Derived selectAll from current selection and visible paginated rows
-  const selectAll = paginatedVoters.length > 0 && paginatedVoters.every(v => selected.includes(v.id));
-  const someSelected = !selectAll && selected.some(id => paginatedVoters.some(v => v.id === id));
+  const selectAll =
+    paginatedVoters.length > 0 &&
+    paginatedVoters.every((v) => selected.includes(v.id));
+  const someSelected =
+    !selectAll &&
+    selected.some((id) => paginatedVoters.some((v) => v.id === id));
 
   useEffect(() => {
     if (selectAllRef.current) {
@@ -274,28 +375,30 @@ const Voters = () => {
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
       // Add ids from visible page if not already selected
-      setSelected(prev => {
+      setSelected((prev) => {
         const newSet = new Set(prev);
-        paginatedVoters.forEach(voter => newSet.add(voter.id));
+        paginatedVoters.forEach((voter) => newSet.add(voter.id));
         return Array.from(newSet);
       });
     } else {
       // Remove ids of visible page from selection
-      setSelected(prev => prev.filter(id => !paginatedVoters.some(v => v.id === id)));
+      setSelected((prev) =>
+        prev.filter((id) => !paginatedVoters.some((v) => v.id === id)),
+      );
     }
   };
 
   // Handler for single selection
   const handleSelect = (id: string) => {
-    setSelected(prev =>
-      prev.includes(id)
-        ? prev.filter((sid) => sid !== id)
-        : [...prev, id]
+    setSelected((prev) =>
+      prev.includes(id) ? prev.filter((sid) => sid !== id) : [...prev, id],
     );
   };
 
   if (loading) {
-    return <div className="flex items-center justify-center h-96">Loading...</div>;
+    return (
+      <div className="flex items-center justify-center h-96">Loading...</div>
+    );
   }
 
   return (
@@ -303,17 +406,39 @@ const Voters = () => {
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
           <h1 className="text-4xl font-bold mb-2">Voter Management</h1>
-          <p className="text-muted-foreground">Approve, suspend, reject, or manage registered voters</p>
+          <p className="text-muted-foreground">
+            Approve, suspend, reject, or manage registered voters
+          </p>
         </div>
 
         {/* Bulk action bar */}
         <div className="mb-4 flex gap-2">
-          <Button size="sm" variant="default" onClick={handleBulkApprove}>Bulk Approve</Button>
-          <Button size="sm" variant="destructive" onClick={handleBulkDelete}>Bulk Delete</Button>
-          <Button size="sm" variant="outline" onClick={() => handleBulkSuspend(true)}>Bulk Suspend</Button>
-          <Button size="sm" variant="outline" onClick={() => handleBulkSuspend(false)}>Bulk Reactivate</Button>
-          <Button size="sm" variant="outline" onClick={handleBulkReject}>Bulk Reject</Button>
-          <span className="text-sm text-muted-foreground ml-2">{selected.length} selected</span>
+          <Button size="sm" variant="default" onClick={handleBulkApprove}>
+            Bulk Approve
+          </Button>
+          <Button size="sm" variant="destructive" onClick={handleBulkDelete}>
+            Bulk Delete
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => handleBulkSuspend(true)}
+          >
+            Bulk Suspend
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => handleBulkSuspend(false)}
+          >
+            Bulk Reactivate
+          </Button>
+          <Button size="sm" variant="outline" onClick={handleBulkReject}>
+            Bulk Reject
+          </Button>
+          <span className="text-sm text-muted-foreground ml-2">
+            {selected.length} selected
+          </span>
         </div>
 
         <Card className="mb-6">
@@ -340,7 +465,7 @@ const Voters = () => {
                       ref={selectAllRef}
                       type="checkbox"
                       checked={selectAll}
-                      onChange={e => handleSelectAll(e.target.checked)}
+                      onChange={(e) => handleSelectAll(e.target.checked)}
                     />
                   </TableHead>
                   <TableHead>Name</TableHead>
@@ -364,13 +489,21 @@ const Voters = () => {
                         onChange={() => handleSelect(voter.id)}
                       />
                     </TableCell>
-                    <TableCell className="font-medium">{voter.full_name}</TableCell>
+                    <TableCell className="font-medium">
+                      {voter.full_name}
+                    </TableCell>
                     <TableCell>{voter.email}</TableCell>
                     <TableCell>{voter.phone || "N/A"}</TableCell>
-                    <TableCell className="capitalize">{voter.gender || "N/A"}</TableCell>
+                    <TableCell className="capitalize">
+                      {voter.gender || "N/A"}
+                    </TableCell>
                     <TableCell>
                       {voter.avatar_url ? (
-                        <img src={voter.avatar_url} alt={`${voter.full_name} avatar`} className="h-10 w-10 rounded object-cover border" />
+                        <img
+                          src={voter.avatar_url}
+                          alt={`${voter.full_name} avatar`}
+                          className="h-10 w-10 rounded object-cover border"
+                        />
                       ) : (
                         <div className="h-10 w-10 rounded border bg-muted flex items-center justify-center">
                           <ImageIcon className="h-4 w-4 text-muted-foreground" />
@@ -404,42 +537,87 @@ const Voters = () => {
                         )}
                       </div>
                     </TableCell>
-                    <TableCell>{new Date(voter.created_at).toLocaleDateString()}</TableCell>
+                    <TableCell>
+                      {new Date(voter.created_at).toLocaleDateString()}
+                    </TableCell>
                     <TableCell className="text-right">
                       <div className="flex gap-2 justify-end">
-                        <Dialog open={editDialogOpen && editingVoter?.id === voter.id} onOpenChange={(o) => setEditDialogOpen(o)}>
+                        <Dialog
+                          open={editDialogOpen && editingVoter?.id === voter.id}
+                          onOpenChange={(o) => setEditDialogOpen(o)}
+                        >
                           <DialogTrigger asChild>
-                            <Button size="sm" variant="outline" onClick={() => handleOpenEdit(voter)}>Edit</Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleOpenEdit(voter)}
+                            >
+                              Edit
+                            </Button>
                           </DialogTrigger>
                           <DialogContent>
                             <DialogHeader>
                               <DialogTitle>Edit Voter</DialogTitle>
                             </DialogHeader>
-                            <form onSubmit={handleSaveEdit} className="space-y-4">
+                            <form
+                              onSubmit={handleSaveEdit}
+                              className="space-y-4"
+                            >
                               <div>
                                 <Label htmlFor="full_name">Full Name</Label>
-                                <Input id="full_name" value={editForm.full_name} onChange={(e) => setEditForm({ ...editForm, full_name: e.target.value })} />
+                                <Input
+                                  id="full_name"
+                                  value={editForm.full_name}
+                                  onChange={(e) =>
+                                    setEditForm({
+                                      ...editForm,
+                                      full_name: e.target.value,
+                                    })
+                                  }
+                                />
                               </div>
-                               <div>
-                                 <Label htmlFor="phone">Phone</Label>
-                                 <Input id="phone" value={editForm.phone} onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })} />
-                               </div>
-                               <div>
-                                 <Label htmlFor="gender">Gender</Label>
-                                 <Select value={editForm.gender} onValueChange={(value) => setEditForm({ ...editForm, gender: value })}>
-                                   <SelectTrigger>
-                                     <SelectValue placeholder="Select gender" />
-                                   </SelectTrigger>
-                                   <SelectContent>
-                                     <SelectItem value="male">Male</SelectItem>
-                                     <SelectItem value="female">Female</SelectItem>
-                                   </SelectContent>
-                                 </Select>
-                               </div>
-                               <div className="flex justify-end gap-2">
-                                 <Button type="button" variant="outline" onClick={() => setEditDialogOpen(false)}>Cancel</Button>
-                                 <Button type="submit">Save</Button>
-                               </div>
+                              <div>
+                                <Label htmlFor="phone">Phone</Label>
+                                <Input
+                                  id="phone"
+                                  value={editForm.phone}
+                                  onChange={(e) =>
+                                    setEditForm({
+                                      ...editForm,
+                                      phone: e.target.value,
+                                    })
+                                  }
+                                />
+                              </div>
+                              <div>
+                                <Label htmlFor="gender">Gender</Label>
+                                <Select
+                                  value={editForm.gender}
+                                  onValueChange={(value) =>
+                                    setEditForm({ ...editForm, gender: value })
+                                  }
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select gender" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="male">Male</SelectItem>
+                                    <SelectItem value="female">
+                                      Female
+                                    </SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <div className="flex justify-end gap-2">
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  onClick={() => setEditDialogOpen(false)}
+                                >
+                                  Cancel
+                                </Button>
+                                <Button type="submit">Save</Button>
+                              </div>
                             </form>
                           </DialogContent>
                         </Dialog>
@@ -454,7 +632,13 @@ const Voters = () => {
                           </Button>
                         )}
                         {voter.identification_url && (
-                          <Button size="sm" variant="outline" onClick={() => handleClearId(voter.id)}>Clear ID</Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleClearId(voter.id)}
+                          >
+                            Clear ID
+                          </Button>
                         )}
                         {voter.is_suspended ? (
                           <Button
@@ -475,6 +659,14 @@ const Voters = () => {
                             Suspend
                           </Button>
                         )}
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleOpenPasswordDialog(voter)}
+                        >
+                          <Lock className="h-4 w-4 mr-1" />
+                          Password
+                        </Button>
                         {/* Delete button */}
                         <Button
                           size="sm"
@@ -490,7 +682,10 @@ const Voters = () => {
                 ))}
                 {paginatedVoters.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
+                    <TableCell
+                      colSpan={10}
+                      className="text-center py-8 text-muted-foreground"
+                    >
                       No voters found
                     </TableCell>
                   </TableRow>
@@ -506,13 +701,17 @@ const Voters = () => {
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <p className="text-sm text-muted-foreground">
-                  Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, filteredVoters.length)} of {filteredVoters.length} voters
+                  Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
+                  {Math.min(currentPage * itemsPerPage, filteredVoters.length)}{" "}
+                  of {filteredVoters.length} voters
                 </p>
                 <div className="flex items-center gap-2">
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    onClick={() =>
+                      setCurrentPage((prev) => Math.max(1, prev - 1))
+                    }
                     disabled={currentPage === 1}
                   >
                     <ChevronLeft className="h-4 w-4" />
@@ -523,7 +722,9 @@ const Voters = () => {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    onClick={() =>
+                      setCurrentPage((prev) => Math.min(totalPages, prev + 1))
+                    }
                     disabled={currentPage === totalPages}
                   >
                     <ChevronRight className="h-4 w-4" />
@@ -533,6 +734,42 @@ const Voters = () => {
             </CardContent>
           </Card>
         )}
+
+        {/* Password Update Dialog */}
+        <Dialog open={passwordDialogOpen} onOpenChange={setPasswordDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>
+                Update Password for {passwordVoter?.full_name}
+              </DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handlePasswordUpdate} className="space-y-4">
+              <div>
+                <Label htmlFor="new_password">New Password</Label>
+                <Input
+                  id="new_password"
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  minLength={6}
+                  required
+                />
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setPasswordDialogOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={passwordUpdating}>
+                  {passwordUpdating ? "Updating..." : "Update Password"}
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
     </AdminRoute>
   );

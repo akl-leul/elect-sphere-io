@@ -128,35 +128,28 @@ const PublicResults = () => {
           .select(
             "id, position_id, campaign_logo_url, profiles:user_id (full_name)",
           )
-          .eq("election_id", electionId)
-          .eq("is_approved", true);
+          .eq("election_id", electionId);
         if (candError) throw candError;
         const typedCandidates = (candidates as Candidate[]) || [];
 
         // Step 4: Process and combine the data.
-        const candidateMap = new Map(
-          typedCandidates.map((cand) => [
-            cand.id,
-            {
-              name: cand.profiles?.full_name ?? "Unknown Candidate",
-              logo: cand.campaign_logo_url,
-            },
+        const voteCountMap = new Map(
+          (voteCounts as VoteCount[]).map((vc) => [
+            vc.candidate_id,
+            vc.vote_count,
           ]),
         );
 
-        const resultsByPosition = ((voteCounts as VoteCount[]) || []).reduce(
-          (acc: Record<string, ResultCandidate[]>, item) => {
-            const candidate = candidateMap.get(item.candidate_id);
-            if (candidate) {
-              if (!acc[item.position_id]) {
-                acc[item.position_id] = [];
-              }
-              acc[item.position_id].push({
-                name: candidate.name,
-                logo: candidate.logo,
-                votes: item.vote_count,
-              });
+        const candidatesByPosition = typedCandidates.reduce(
+          (acc: Record<string, ResultCandidate[]>, cand) => {
+            if (!acc[cand.position_id]) {
+              acc[cand.position_id] = [];
             }
+            acc[cand.position_id].push({
+              name: cand.profiles?.full_name ?? "Unknown Candidate",
+              logo: cand.campaign_logo_url,
+              votes: voteCountMap.get(cand.id) || 0, // Default to 0 votes
+            });
             return acc;
           },
           {},
@@ -164,7 +157,7 @@ const PublicResults = () => {
 
         const finalResults: Result[] = typedPositions.map((pos) => ({
           position: pos.title,
-          candidates: (resultsByPosition[pos.id] || []).sort(
+          candidates: (candidatesByPosition[pos.id] || []).sort(
             (a, b) => b.votes - a.votes,
           ),
         }));
