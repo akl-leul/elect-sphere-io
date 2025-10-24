@@ -2,14 +2,30 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Edit, Trash2, Loader2, ExternalLink } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { candidateSchema } from "@/lib/validation";
 
 const MyCandidacy = () => {
@@ -25,16 +41,20 @@ const MyCandidacy = () => {
 
   const fetchCandidacies = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) return;
 
       const { data, error } = await supabase
         .from("candidates")
-        .select(`
+        .select(
+          `
           *,
           election:elections(title, is_active, registration_enabled),
           position:positions(title)
-        `)
+        `,
+        )
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
 
@@ -52,14 +72,18 @@ const MyCandidacy = () => {
     setFormData({
       biography: candidacy.biography || "",
       slogan: candidacy.slogan || "",
-      social_links: candidacy.social_links || { facebook: "", twitter: "", instagram: "" },
+      social_links: candidacy.social_links || {
+        facebook: "",
+        twitter: "",
+        instagram: "",
+      },
     });
   };
 
   const handleUpdate = async (id: string) => {
     try {
       const validated = candidateSchema.parse(formData);
-      
+
       const { error } = await supabase
         .from("candidates")
         .update({
@@ -85,10 +109,7 @@ const MyCandidacy = () => {
 
   const handleDelete = async (id: string) => {
     try {
-      const { error } = await supabase
-        .from("candidates")
-        .delete()
-        .eq("id", id);
+      const { error } = await supabase.from("candidates").delete().eq("id", id);
 
       if (error) throw error;
 
@@ -100,7 +121,9 @@ const MyCandidacy = () => {
   };
 
   const canEditOrDelete = (candidacy: any) => {
-    return !candidacy.election?.is_active && candidacy.election?.registration_enabled;
+    return (
+      !candidacy.election?.is_active && candidacy.election?.registration_enabled
+    );
   };
 
   if (loading) {
@@ -116,7 +139,9 @@ const MyCandidacy = () => {
       <div className="mb-8 flex justify-between items-center">
         <div>
           <h1 className="text-4xl font-bold mb-2">My Candidacies</h1>
-          <p className="text-muted-foreground">Manage your candidate registrations</p>
+          <p className="text-muted-foreground">
+            Manage your candidate registrations
+          </p>
         </div>
         <Button onClick={() => navigate("/candidate/register")}>
           Register for New Position
@@ -126,7 +151,9 @@ const MyCandidacy = () => {
       {candidacies.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center">
-            <p className="text-muted-foreground mb-4">You haven't registered for any positions yet.</p>
+            <p className="text-muted-foreground mb-4">
+              You haven't registered for any positions yet.
+            </p>
             <Button onClick={() => navigate("/candidate/register")}>
               Register as Candidate
             </Button>
@@ -140,10 +167,14 @@ const MyCandidacy = () => {
                 <div className="flex justify-between items-start">
                   <div>
                     <CardTitle>{candidacy.position?.title}</CardTitle>
-                    <CardDescription>{candidacy.election?.title}</CardDescription>
+                    <CardDescription>
+                      {candidacy.election?.title}
+                    </CardDescription>
                   </div>
                   <div className="flex gap-2 flex-wrap justify-end">
-                    <Badge variant={candidacy.is_approved ? "default" : "secondary"}>
+                    <Badge
+                      variant={candidacy.is_approved ? "default" : "secondary"}
+                    >
                       {candidacy.is_approved ? "Approved" : "Pending Approval"}
                     </Badge>
                     {candidacy.election?.is_active && (
@@ -160,7 +191,12 @@ const MyCandidacy = () => {
                       <Textarea
                         id={`bio-${candidacy.id}`}
                         value={formData.biography}
-                        onChange={(e) => setFormData({ ...formData, biography: e.target.value })}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            biography: e.target.value,
+                          })
+                        }
                         rows={4}
                         maxLength={2000}
                       />
@@ -173,7 +209,9 @@ const MyCandidacy = () => {
                       <Input
                         id={`slogan-${candidacy.id}`}
                         value={formData.slogan}
-                        onChange={(e) => setFormData({ ...formData, slogan: e.target.value })}
+                        onChange={(e) =>
+                          setFormData({ ...formData, slogan: e.target.value })
+                        }
                         maxLength={200}
                       />
                       <p className="text-xs text-muted-foreground mt-1">
@@ -184,7 +222,10 @@ const MyCandidacy = () => {
                       <Button onClick={() => handleUpdate(candidacy.id)}>
                         Save Changes
                       </Button>
-                      <Button variant="outline" onClick={() => setEditingId(null)}>
+                      <Button
+                        variant="outline"
+                        onClick={() => setEditingId(null)}
+                      >
                         Cancel
                       </Button>
                     </div>
@@ -193,7 +234,9 @@ const MyCandidacy = () => {
                   <>
                     <div>
                       <h3 className="font-semibold mb-1">Slogan</h3>
-                      <p className="text-muted-foreground">{candidacy.slogan || "No slogan provided"}</p>
+                      <p className="text-muted-foreground">
+                        {candidacy.slogan || "No slogan provided"}
+                      </p>
                     </div>
                     <div>
                       <h3 className="font-semibold mb-1">Biography</h3>
@@ -227,7 +270,10 @@ const MyCandidacy = () => {
                     <div className="flex gap-2">
                       {canEditOrDelete(candidacy) && (
                         <>
-                          <Button variant="outline" onClick={() => handleEdit(candidacy)}>
+                          <Button
+                            variant="outline"
+                            onClick={() => handleEdit(candidacy)}
+                          >
                             <Edit className="h-4 w-4 mr-2" />
                             Edit
                           </Button>
@@ -240,14 +286,19 @@ const MyCandidacy = () => {
                             </AlertDialogTrigger>
                             <AlertDialogContent>
                               <AlertDialogHeader>
-                                <AlertDialogTitle>Withdraw Candidacy?</AlertDialogTitle>
+                                <AlertDialogTitle>
+                                  Withdraw Candidacy?
+                                </AlertDialogTitle>
                                 <AlertDialogDescription>
-                                  This action cannot be undone. You can register again if needed.
+                                  This action cannot be undone. You can register
+                                  again if needed.
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => handleDelete(candidacy.id)}>
+                                <AlertDialogAction
+                                  onClick={() => handleDelete(candidacy.id)}
+                                >
                                   Withdraw
                                 </AlertDialogAction>
                               </AlertDialogFooter>
