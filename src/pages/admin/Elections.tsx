@@ -1,14 +1,34 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Plus, Edit, Trash2, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Plus,
+  Edit,
+  Trash2,
+  Calendar,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import AdminRoute from "@/components/auth/AdminRoute";
 import { electionSchema } from "@/lib/validation";
 
@@ -100,10 +120,7 @@ const Elections = () => {
     if (!confirm("Are you sure you want to delete this election?")) return;
 
     try {
-      const { error } = await supabase
-        .from("elections")
-        .delete()
-        .eq("id", id);
+      const { error } = await supabase.from("elections").delete().eq("id", id);
 
       if (error) throw error;
       toast.success("Election deleted successfully");
@@ -118,8 +135,12 @@ const Elections = () => {
     setFormData({
       title: election.title,
       description: election.description || "",
-      start_date: election.start_date ? new Date(election.start_date).toISOString().slice(0, 16) : "",
-      end_date: election.end_date ? new Date(election.end_date).toISOString().slice(0, 16) : "",
+      start_date: election.start_date
+        ? new Date(election.start_date).toISOString().slice(0, 16)
+        : "",
+      end_date: election.end_date
+        ? new Date(election.end_date).toISOString().slice(0, 16)
+        : "",
       is_active: election.is_active,
       registration_enabled: election.registration_enabled,
       results_visible: election.results_visible,
@@ -140,15 +161,34 @@ const Elections = () => {
     });
   };
 
+  const handleToggleActive = async (election: any) => {
+    try {
+      const { error } = await supabase
+        .from("elections")
+        .update({ is_active: !election.is_active })
+        .eq("id", election.id);
+
+      if (error) throw error;
+      toast.success(
+        `Election ${!election.is_active ? "activated" : "deactivated"}`,
+      );
+      fetchElections();
+    } catch (error: any) {
+      toast.error(error.message);
+    }
+  };
+
   // Pagination
   const totalPages = Math.ceil(elections.length / itemsPerPage);
   const paginatedElections = elections.slice(
     (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
+    currentPage * itemsPerPage,
   );
 
   if (loading) {
-    return <div className="flex items-center justify-center h-96">Loading...</div>;
+    return (
+      <div className="flex items-center justify-center h-96">Loading...</div>
+    );
   }
 
   return (
@@ -168,9 +208,12 @@ const Elections = () => {
             </DialogTrigger>
             <DialogContent className="max-w-2xl">
               <DialogHeader>
-                <DialogTitle>{editingElection ? "Edit Election" : "Create New Election"}</DialogTitle>
+                <DialogTitle>
+                  {editingElection ? "Edit Election" : "Create New Election"}
+                </DialogTitle>
                 <DialogDescription>
-                  Fill in the details to {editingElection ? "update" : "create"} an election
+                  Fill in the details to {editingElection ? "update" : "create"}{" "}
+                  an election
                 </DialogDescription>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
@@ -179,7 +222,9 @@ const Elections = () => {
                   <Input
                     id="title"
                     value={formData.title}
-                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, title: e.target.value })
+                    }
                     required
                   />
                 </div>
@@ -188,7 +233,9 @@ const Elections = () => {
                   <Textarea
                     id="description"
                     value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, description: e.target.value })
+                    }
                     rows={3}
                   />
                 </div>
@@ -199,7 +246,9 @@ const Elections = () => {
                       id="start_date"
                       type="datetime-local"
                       value={formData.start_date}
-                      onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, start_date: e.target.value })
+                      }
                     />
                   </div>
                   <div>
@@ -208,7 +257,9 @@ const Elections = () => {
                       id="end_date"
                       type="datetime-local"
                       value={formData.end_date}
-                      onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, end_date: e.target.value })
+                      }
                     />
                   </div>
                 </div>
@@ -218,15 +269,24 @@ const Elections = () => {
                     <Switch
                       id="is_active"
                       checked={formData.is_active}
-                      onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
+                      onCheckedChange={(checked) =>
+                        setFormData({ ...formData, is_active: checked })
+                      }
                     />
                   </div>
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="registration_enabled">Registration Enabled</Label>
+                    <Label htmlFor="registration_enabled">
+                      Registration Enabled
+                    </Label>
                     <Switch
                       id="registration_enabled"
                       checked={formData.registration_enabled}
-                      onCheckedChange={(checked) => setFormData({ ...formData, registration_enabled: checked })}
+                      onCheckedChange={(checked) =>
+                        setFormData({
+                          ...formData,
+                          registration_enabled: checked,
+                        })
+                      }
                     />
                   </div>
                   <div className="flex items-center justify-between">
@@ -234,12 +294,18 @@ const Elections = () => {
                     <Switch
                       id="results_visible"
                       checked={formData.results_visible}
-                      onCheckedChange={(checked) => setFormData({ ...formData, results_visible: checked })}
+                      onCheckedChange={(checked) =>
+                        setFormData({ ...formData, results_visible: checked })
+                      }
                     />
                   </div>
                 </div>
                 <div className="flex gap-2 justify-end">
-                  <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setDialogOpen(false)}
+                  >
                     Cancel
                   </Button>
                   <Button type="submit">
@@ -259,17 +325,26 @@ const Elections = () => {
                   <div>
                     <CardTitle className="flex items-center gap-2">
                       {election.title}
-                      {election.is_active && (
-                        <span className="px-2 py-1 text-xs bg-success/20 text-success rounded-full">Active</span>
-                      )}
                     </CardTitle>
                     <CardDescription>{election.description}</CardDescription>
                   </div>
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="outline" onClick={() => handleEdit(election)}>
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      checked={election.is_active}
+                      onCheckedChange={() => handleToggleActive(election)}
+                    />
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleEdit(election)}
+                    >
                       <Edit className="h-4 w-4" />
                     </Button>
-                    <Button size="sm" variant="destructive" onClick={() => handleDelete(election.id)}>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => handleDelete(election.id)}
+                    >
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
@@ -279,18 +354,33 @@ const Elections = () => {
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div className="flex items-center gap-2">
                     <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <span>Start: {election.start_date ? new Date(election.start_date).toLocaleString() : "Not set"}</span>
+                    <span>
+                      Start:{" "}
+                      {election.start_date
+                        ? new Date(election.start_date).toLocaleString()
+                        : "Not set"}
+                    </span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <span>End: {election.end_date ? new Date(election.end_date).toLocaleString() : "Not set"}</span>
+                    <span>
+                      End:{" "}
+                      {election.end_date
+                        ? new Date(election.end_date).toLocaleString()
+                        : "Not set"}
+                    </span>
                   </div>
                 </div>
                 <div className="flex gap-4 mt-4">
-                  <span className={`text-sm ${election.registration_enabled ? "text-success" : "text-muted-foreground"}`}>
-                    Registration: {election.registration_enabled ? "Enabled" : "Disabled"}
+                  <span
+                    className={`text-sm ${election.registration_enabled ? "text-success" : "text-muted-foreground"}`}
+                  >
+                    Registration:{" "}
+                    {election.registration_enabled ? "Enabled" : "Disabled"}
                   </span>
-                  <span className={`text-sm ${election.results_visible ? "text-success" : "text-muted-foreground"}`}>
+                  <span
+                    className={`text-sm ${election.results_visible ? "text-success" : "text-muted-foreground"}`}
+                  >
                     Results: {election.results_visible ? "Visible" : "Hidden"}
                   </span>
                 </div>
@@ -300,7 +390,9 @@ const Elections = () => {
           {paginatedElections.length === 0 && elections.length === 0 && (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">
-                <p className="text-muted-foreground mb-4">No elections created yet</p>
+                <p className="text-muted-foreground mb-4">
+                  No elections created yet
+                </p>
                 <Button onClick={() => setDialogOpen(true)}>
                   <Plus className="h-4 w-4 mr-2" />
                   Create Your First Election
@@ -316,13 +408,17 @@ const Elections = () => {
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <p className="text-sm text-muted-foreground">
-                  Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, elections.length)} of {elections.length} elections
+                  Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
+                  {Math.min(currentPage * itemsPerPage, elections.length)} of{" "}
+                  {elections.length} elections
                 </p>
                 <div className="flex items-center gap-2">
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    onClick={() =>
+                      setCurrentPage((prev) => Math.max(1, prev - 1))
+                    }
                     disabled={currentPage === 1}
                   >
                     <ChevronLeft className="h-4 w-4" />
@@ -333,7 +429,9 @@ const Elections = () => {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    onClick={() =>
+                      setCurrentPage((prev) => Math.min(totalPages, prev + 1))
+                    }
                     disabled={currentPage === totalPages}
                   >
                     <ChevronRight className="h-4 w-4" />

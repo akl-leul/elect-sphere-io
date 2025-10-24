@@ -1,12 +1,35 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
-import { User, Mail, Phone, CheckCircle, XCircle, Upload, Image as ImageIcon, FileText, Loader2 } from "lucide-react";
+import {
+  User,
+  Mail,
+  Phone,
+  CheckCircle,
+  XCircle,
+  Upload,
+  Image as ImageIcon,
+  FileText,
+  Loader2,
+  Lock,
+} from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { profileSchema } from "@/lib/validation";
 
@@ -22,6 +45,9 @@ const Profile = () => {
     phone: "",
     gender: "" as "male" | "female" | "",
   });
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordUpdating, setPasswordUpdating] = useState(false);
 
   useEffect(() => {
     fetchProfile();
@@ -29,7 +55,9 @@ const Profile = () => {
 
   const fetchProfile = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) return;
 
       const { data, error } = await supabase
@@ -66,36 +94,44 @@ const Profile = () => {
     }
   };
 
-  const uploadFile = async (file: File, bucket: string, folder: string): Promise<string> => {
-    const fileExt = file.name.split('.').pop();
+  const uploadFile = async (
+    file: File,
+    bucket: string,
+    folder: string,
+  ): Promise<string> => {
+    const fileExt = file.name.split(".").pop();
     const fileName = `${folder}/${Date.now()}.${fileExt}`;
-    
+
     const { error: uploadError } = await supabase.storage
       .from(bucket)
       .upload(fileName, file, {
-        cacheControl: '3600',
-        upsert: false
+        cacheControl: "3600",
+        upsert: false,
       });
 
     if (uploadError) throw uploadError;
 
     // For private buckets, store the object path; for public buckets, store public URL
-    if (bucket === 'voter-documents') {
+    if (bucket === "voter-documents") {
       return fileName;
     }
-    const { data: { publicUrl } } = supabase.storage.from(bucket).getPublicUrl(fileName);
+    const {
+      data: { publicUrl },
+    } = supabase.storage.from(bucket).getPublicUrl(fileName);
     return publicUrl;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setUploading(true);
-    
+
     try {
       // Validate form data
       const validated = profileSchema.parse(formData);
 
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) return;
 
       let avatarUrl = profile?.avatar_url;
@@ -103,12 +139,12 @@ const Profile = () => {
 
       // Upload avatar if changed
       if (avatarFile) {
-        avatarUrl = await uploadFile(avatarFile, 'avatars', user.id);
+        avatarUrl = await uploadFile(avatarFile, "avatars", user.id);
       }
 
       // Upload ID document if provided
       if (idFile) {
-        idUrl = await uploadFile(idFile, 'voter-documents', user.id);
+        idUrl = await uploadFile(idFile, "voter-documents", user.id);
       }
 
       const { error } = await supabase
@@ -135,23 +171,57 @@ const Profile = () => {
     }
   };
 
+  const handlePasswordUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (password !== confirmPassword) {
+      toast.error("Passwords do not match");
+      return;
+    }
+    if (password.length < 6) {
+      toast.error("Password must be at least 6 characters");
+      return;
+    }
+
+    setPasswordUpdating(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ password });
+      if (error) throw error;
+      toast.success("Password updated successfully");
+      setPassword("");
+      setConfirmPassword("");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to update password");
+    } finally {
+      setPasswordUpdating(false);
+    }
+  };
+
   if (loading) {
-    return <div className="flex items-center justify-center h-96">Loading...</div>;
+    return (
+      <div className="flex items-center justify-center h-96">Loading...</div>
+    );
   }
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-2xl">
       <div className="mb-8">
-        
-        <h1 className="text-4xl font-bold mb-2 flex gap-2"><img src="https://sitedu.info/img/logo/primary-logo.webp" alt="" className="w-10 h-10 rounded"/>
-          My Profile</h1>
+        <h1 className="text-4xl font-bold mb-2 flex gap-2">
+          <img
+            src="https://sitedu.info/img/logo/primary-logo.webp"
+            alt=""
+            className="w-10 h-10 rounded"
+          />
+          My Profile
+        </h1>
         <p className="text-muted-foreground">Manage your account information</p>
       </div>
 
       <Card className="mb-6">
         <CardHeader>
           <CardTitle>Account Status</CardTitle>
-          <CardDescription>Your current account verification status</CardDescription>
+          <CardDescription>
+            Your current account verification status
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-center gap-4">
@@ -247,7 +317,9 @@ const Profile = () => {
               <Input
                 id="full_name"
                 value={formData.full_name}
-                onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, full_name: e.target.value })
+                }
                 required
               />
             </div>
@@ -261,7 +333,9 @@ const Profile = () => {
                 id="phone"
                 type="tel"
                 value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, phone: e.target.value })
+                }
                 placeholder="+1234567890"
               />
               <p className="text-xs text-muted-foreground mt-1">
@@ -273,7 +347,9 @@ const Profile = () => {
               <Label htmlFor="gender">Gender</Label>
               <Select
                 value={formData.gender}
-                onValueChange={(value: "male" | "female") => setFormData({ ...formData, gender: value })}
+                onValueChange={(value: "male" | "female") =>
+                  setFormData({ ...formData, gender: value })
+                }
                 required
               >
                 <SelectTrigger id="gender">
@@ -287,7 +363,10 @@ const Profile = () => {
             </div>
 
             <div>
-              <Label htmlFor="identification" className="flex items-center gap-2">
+              <Label
+                htmlFor="identification"
+                className="flex items-center gap-2"
+              >
                 <FileText className="h-4 w-4" />
                 Identification Document
               </Label>
@@ -316,6 +395,64 @@ const Profile = () => {
                 </>
               ) : (
                 "Update Profile"
+              )}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Update Password</CardTitle>
+          <CardDescription>
+            Enter a new password for your account.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handlePasswordUpdate} className="space-y-4">
+            <div>
+              <Label htmlFor="new_password" className="flex items-center gap-2">
+                <Lock className="h-4 w-4" />
+                New Password
+              </Label>
+              <Input
+                id="new_password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                minLength={6}
+                required
+              />
+            </div>
+            <div>
+              <Label
+                htmlFor="confirm_password"
+                className="flex items-center gap-2"
+              >
+                <Lock className="h-4 w-4" />
+                Confirm New Password
+              </Label>
+              <Input
+                id="confirm_password"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                minLength={6}
+                required
+              />
+            </div>
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={passwordUpdating}
+            >
+              {passwordUpdating ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Updating Password...
+                </>
+              ) : (
+                "Update Password"
               )}
             </Button>
           </form>

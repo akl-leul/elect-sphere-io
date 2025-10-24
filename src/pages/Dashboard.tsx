@@ -2,8 +2,22 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Vote, UserCheck, Users, Settings, LogOut, CircleUserRound, ListChecks} from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Vote,
+  UserCheck,
+  Users,
+  Settings,
+  LogOut,
+  CircleUserRound,
+  ListChecks,
+} from "lucide-react";
 import { toast } from "sonner";
 
 const Dashboard = () => {
@@ -16,8 +30,10 @@ const Dashboard = () => {
   useEffect(() => {
     checkAuth();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_OUT') {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_OUT") {
         navigate("/auth");
       }
     });
@@ -33,8 +49,10 @@ const Dashboard = () => {
 
   const checkAuth = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
       if (!session) {
         navigate("/auth");
         return;
@@ -91,15 +109,24 @@ const Dashboard = () => {
       <nav className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-             <img src="https://sitedu.info/img/logo/primary-logo.webp" alt="" className="w-10 h-10 rounded"/>
-        
+            <img
+              src="https://sitedu.info/img/logo/primary-logo.webp"
+              alt=""
+              className="w-10 h-10 rounded"
+            />
+
             <span className="text-xl font-bold">SIT Election Portal</span>
           </div>
           <div className="flex items-center gap-4">
             <span className="text-sm text-muted-foreground">
-              Welcome, {profile?.full_name || user?.email} 
-            </span> 
-            <Button variant="outline" size="sm" onClick={handleLogout} className="hover:bg-red-600">
+              Welcome, {profile?.full_name || user?.email}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleLogout}
+              className="hover:bg-red-600"
+            >
               <LogOut className="h-4 w-4 mr-2" />
               Logout
             </Button>
@@ -111,14 +138,19 @@ const Dashboard = () => {
         {!isAdmin && (
           <div className="mb-8">
             <h1 className="text-4xl font-bold mb-2">Dashboard</h1>
-            <p className="text-muted-foreground">Participate in elections and view results</p>
+            <p className="text-muted-foreground">
+              Participate in elections and view results
+            </p>
           </div>
         )}
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {!isAdmin && (<></>)}
+          {!isAdmin && <></>}
 
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate("/voter/vote")}>
+          <Card
+            className="hover:shadow-lg transition-shadow cursor-pointer"
+            onClick={() => navigate("/anonymous-vote")}
+          >
             <CardHeader>
               <Vote className="h-8 w-8 text-primary mb-2" />
               <CardTitle>Cast Your Vote</CardTitle>
@@ -128,8 +160,23 @@ const Dashboard = () => {
               <Button className="w-full">Vote Now</Button>
             </CardContent>
           </Card>
-
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate("/candidate/register")}>
+          <Card
+            className="hover:shadow-lg transition-shadow cursor-pointer"
+            onClick={() => navigate("/PublicResults")}
+          >
+            <CardHeader>
+              <Vote className="h-8 w-8 text-primary mb-2" />
+              <CardTitle>See Results</CardTitle>
+              <CardDescription>Check all Election Results</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button className="w-full">Check Result</Button>
+            </CardContent>
+          </Card>
+          <Card
+            className="hover:shadow-lg transition-shadow cursor-pointer"
+            onClick={() => navigate("/candidate/register")}
+          >
             <CardHeader>
               <UserCheck className="h-8 w-8 text-primary mb-2" />
               <CardTitle>Register as Candidate</CardTitle>
@@ -142,7 +189,10 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate("/voter/profile")}>
+          <Card
+            className="hover:shadow-lg transition-shadow cursor-pointer"
+            onClick={() => navigate("/voter/profile")}
+          >
             <CardHeader>
               <UserCheck className="h-8 w-8 text-primary mb-2" />
               <CardTitle>My Profile</CardTitle>
@@ -154,7 +204,10 @@ const Dashboard = () => {
               </Button>
             </CardContent>
           </Card>
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate("/candidate/my-candidacy")}>
+          <Card
+            className="hover:shadow-lg transition-shadow cursor-pointer"
+            onClick={() => navigate("/candidate/my-candidacy")}
+          >
             <CardHeader>
               <CircleUserRound className="h-8 w-8 text-primary mb-2" />
               <CardTitle>My Candidacy</CardTitle>
@@ -167,12 +220,13 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate("/candidates")}>
+          <Card
+            className="hover:shadow-lg transition-shadow cursor-pointer"
+            onClick={() => navigate("/candidates")}
+          >
             <CardHeader>
               <ListChecks className="h-8 w-8 text-primary mb-2" />
-              <CardTitle>
-                View Candidates
-              </CardTitle>
+              <CardTitle>View Candidates</CardTitle>
               <CardDescription>
                 Browse all registered candidates
               </CardDescription>
@@ -189,7 +243,8 @@ const Dashboard = () => {
           <Card className="mt-6 bg-warning-light border-warning">
             <CardContent className="pt-6">
               <p className="text-sm">
-                Your account is pending approval. You'll be able to vote once an administrator approves your registration.
+                Your account is pending approval. You'll be able to vote once an
+                administrator approves your registration.
               </p>
             </CardContent>
           </Card>

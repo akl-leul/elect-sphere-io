@@ -1,16 +1,53 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, ExternalLink, Users } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+interface Election {
+  id: string;
+  title: string;
+}
+
+interface Position {
+  id: string;
+  title: string;
+  description: string | null;
+}
+
+interface Candidate {
+  id: string;
+  position_id: string;
+  is_approved: boolean;
+  user: {
+    full_name: string | null;
+    avatar_url: string | null;
+  } | null;
+  campaign_logo_url: string | null;
+  slogan: string | null;
+  biography: string | null;
+  manifesto_url: string | null;
+}
 
 const Candidates = () => {
-  const [elections, setElections] = useState<any[]>([]);
+  const [elections, setElections] = useState<Election[]>([]);
   const [selectedElection, setSelectedElection] = useState<string>("");
-  const [positions, setPositions] = useState<any[]>([]);
-  const [candidates, setCandidates] = useState<any[]>([]);
+  const [positions, setPositions] = useState<Position[]>([]);
+  const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -28,7 +65,7 @@ const Candidates = () => {
       const { data, error } = await supabase
         .from("elections")
         .select("*")
-        .eq("is_active", true)
+
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -45,21 +82,23 @@ const Candidates = () => {
 
   const fetchPositionsAndCandidates = async (electionId: string) => {
     try {
-      const [{ data: positionsData }, { data: candidatesData }] = await Promise.all([
-        supabase
-          .from("positions")
-          .select("*")
-          .eq("election_id", electionId)
-          .order("display_order"),
-        supabase
-          .from("candidates")
-          .select(`
+      const [{ data: positionsData }, { data: candidatesData }] =
+        await Promise.all([
+          supabase
+            .from("positions")
+            .select("*")
+            .eq("election_id", electionId)
+            .order("display_order"),
+          supabase
+            .from("candidates")
+            .select(
+              `
             *,
             user:profiles(full_name, avatar_url)
-          `)
-          .eq("election_id", electionId)
-          .eq("is_approved", true)
-      ]);
+          `,
+            )
+            .eq("election_id", electionId),
+        ]);
 
       setPositions(positionsData || []);
       setCandidates(candidatesData || []);
@@ -86,8 +125,10 @@ const Candidates = () => {
         <Card>
           <CardContent className="py-12 text-center">
             <Users className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-            <h2 className="text-2xl font-bold mb-2">No Active Elections</h2>
-            <p className="text-muted-foreground">There are no active elections at the moment.</p>
+            <h2 className="text-2xl font-bold mb-2">No Elections Found</h2>
+            <p className="text-muted-foreground">
+              There are no elections to display at the moment.
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -98,8 +139,10 @@ const Candidates = () => {
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
         <h1 className="text-4xl font-bold mb-2">Election Candidates</h1>
-        <p className="text-muted-foreground mb-4">View candidates running for different positions</p>
-        
+        <p className="text-muted-foreground mb-4">
+          View candidates running for different positions
+        </p>
+
         <div className="max-w-xs">
           <Select value={selectedElection} onValueChange={setSelectedElection}>
             <SelectTrigger>
@@ -119,18 +162,20 @@ const Candidates = () => {
       <div className="space-y-8">
         {positions.map((position) => {
           const positionCandidates = getCandidatesForPosition(position.id);
-          
+
           return (
             <div key={position.id}>
               <h2 className="text-2xl font-bold mb-4">{position.title}</h2>
               {position.description && (
-                <p className="text-muted-foreground mb-4">{position.description}</p>
+                <p className="text-muted-foreground mb-4">
+                  {position.description}
+                </p>
               )}
-              
+
               {positionCandidates.length === 0 ? (
                 <Card>
                   <CardContent className="py-6 text-center text-muted-foreground">
-                    No approved candidates for this position yet
+                    No candidates for this position yet
                   </CardContent>
                 </Card>
               ) : (
@@ -140,14 +185,24 @@ const Candidates = () => {
                       <CardHeader className="pb-4">
                         <div className="flex items-center gap-4">
                           <Avatar className="h-16 w-16">
-                            <AvatarImage src={candidate.user?.avatar_url} alt={candidate.user?.full_name} />
+                            <AvatarImage
+                              src={candidate.user?.avatar_url}
+                              alt={candidate.user?.full_name}
+                            />
                             <AvatarFallback>
                               {candidate.user?.full_name?.charAt(0) || "C"}
                             </AvatarFallback>
                           </Avatar>
                           <div>
                             <CardTitle>{candidate.user?.full_name}</CardTitle>
-                            <Badge variant="secondary" className="mt-1">Candidate</Badge>
+                            <Badge
+                              variant={
+                                candidate.is_approved ? "default" : "secondary"
+                              }
+                              className="mt-1"
+                            >
+                              {candidate.is_approved ? "Approved" : "Pending"}
+                            </Badge>
                           </div>
                         </div>
                       </CardHeader>
@@ -161,7 +216,9 @@ const Candidates = () => {
                         )}
                         {candidate.slogan && (
                           <div>
-                            <h3 className="font-semibold text-sm mb-1">Slogan</h3>
+                            <h3 className="font-semibold text-sm mb-1">
+                              Slogan
+                            </h3>
                             <p className="text-sm text-muted-foreground italic">
                               "{candidate.slogan}"
                             </p>
@@ -169,7 +226,9 @@ const Candidates = () => {
                         )}
                         {candidate.biography && (
                           <div>
-                            <h3 className="font-semibold text-sm mb-1">Biography</h3>
+                            <h3 className="font-semibold text-sm mb-1">
+                              Biography
+                            </h3>
                             <p className="text-sm text-muted-foreground line-clamp-4">
                               {candidate.biography}
                             </p>

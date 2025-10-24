@@ -24,6 +24,8 @@ import MyCandidacy from "./pages/candidate/MyCandidacy";
 import CandidatesList from "./pages/Candidates";
 import ViewRequirements from "./pages/candidate/ViewRequirements";
 
+import AnonymousVote from "./pages/AnonymousVote";
+import PublicResults from "./pages/Results";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -50,9 +52,14 @@ const App = () => (
           <Route path="/voter/vote" element={<Vote />} />
           <Route path="/candidate/register" element={<CandidateRegister />} />
           <Route path="/candidate/my-candidacy" element={<MyCandidacy />} />
-          <Route path="/candidate/requirements" element={<ViewRequirements />} />
+          <Route
+            path="/candidate/requirements"
+            element={<ViewRequirements />}
+          />
           <Route path="/candidates" element={<CandidatesList />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          <Route path="/anonymous-vote" element={<AnonymousVote />} />
+          <Route path="/PublicResults" element={<PublicResults />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
