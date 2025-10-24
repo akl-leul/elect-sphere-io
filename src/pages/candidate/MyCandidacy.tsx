@@ -34,6 +34,9 @@ const MyCandidacy = () => {
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState<any>(null);
+  const [selectedLogoFile, setSelectedLogoFile] = useState<File | null>(null);
+  const [selectedManifestoFile, setSelectedManifestoFile] =
+    useState<File | null>(null);
 
   useEffect(() => {
     fetchCandidacies();
@@ -77,12 +80,76 @@ const MyCandidacy = () => {
         twitter: "",
         instagram: "",
       },
+      campaign_logo_url: candidacy.campaign_logo_url || "", // Keep URL in formData
+      manifesto_url: candidacy.manifesto_url || "", // Keep URL in formData
     });
+    setSelectedLogoFile(null); // Clear selected files when starting edit
+    setSelectedManifestoFile(null);
   };
 
   const handleUpdate = async (id: string) => {
     try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error("You must be logged in to update your candidacy.");
+        return;
+      }
+
       const validated = candidateSchema.parse(formData);
+      let updatedLogoUrl = validated.campaign_logo_url; // Start with current URL or empty
+      let updatedManifestoUrl = validated.manifesto_url; // Start with current URL or empty
+
+      // Handle campaign logo upload
+      if (selectedLogoFile) {
+        const fileExtension = selectedLogoFile.name.split(".").pop();
+        const path = `${user.id}/${id}/logo_${Date.now()}.${fileExtension}`;
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from("candidate-files") // Using 'candidate-files' bucket
+          .upload(path, selectedLogoFile, {
+            cacheControl: "3600",
+            upsert: false,
+          });
+
+        if (uploadError) {
+          console.error("Error uploading logo:", uploadError);
+          toast.error("Failed to upload campaign logo");
+          return;
+        }
+        const { data: publicUrlData } = supabase.storage
+          .from("candidate-files")
+          .getPublicUrl(path);
+        updatedLogoUrl = publicUrlData.publicUrl;
+      } else if (formData.campaign_logo_url === "") {
+        // If no new file selected and user cleared the URL field
+        updatedLogoUrl = "";
+      }
+
+      // Handle manifesto upload
+      if (selectedManifestoFile) {
+        const fileExtension = selectedManifestoFile.name.split(".").pop();
+        const path = `${user.id}/${id}/manifesto_${Date.now()}.${fileExtension}`;
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from("candidate-files") // Using 'candidate-files' bucket
+          .upload(path, selectedManifestoFile, {
+            cacheControl: "3600",
+            upsert: false,
+          });
+
+        if (uploadError) {
+          console.error("Error uploading manifesto:", uploadError);
+          toast.error("Failed to upload manifesto");
+          return;
+        }
+        const { data: publicUrlData } = supabase.storage
+          .from("candidate-files")
+          .getPublicUrl(path);
+        updatedManifestoUrl = publicUrlData.publicUrl;
+      } else if (formData.manifesto_url === "") {
+        // If no new file selected and user cleared the URL field
+        updatedManifestoUrl = "";
+      }
 
       const { error } = await supabase
         .from("candidates")
@@ -90,15 +157,24 @@ const MyCandidacy = () => {
           biography: validated.biography,
           slogan: validated.slogan,
           social_links: validated.social_links,
+          campaign_logo_url: updatedLogoUrl,
+          manifesto_url: updatedManifestoUrl,
         })
         .eq("id", id);
 
-      if (error) throw error;
+      if (error) {
+        console.error("Supabase update error:", error);
+        throw error;
+      }
 
+      console.log("Candidacy updated successfully for ID:", id);
       toast.success("Candidacy updated successfully");
       setEditingId(null);
+      setSelectedLogoFile(null);
+      setSelectedManifestoFile(null);
       fetchCandidacies();
     } catch (error: any) {
+      console.error("Error during candidacy update:", error);
       if (error.errors) {
         error.errors.forEach((err: any) => toast.error(err.message));
       } else {
@@ -217,6 +293,163 @@ const MyCandidacy = () => {
                       <p className="text-xs text-muted-foreground mt-1">
                         {formData.slogan.length}/200 characters
                       </p>
+                    </div>
+                    <div>
+                      <Label htmlFor={`facebook-${candidacy.id}`}>
+                        Facebook
+                      </Label>
+                      <Input
+                        id={`facebook-${candidacy.id}`}
+                        value={formData.social_links.facebook || ""}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            social_links: {
+                              ...formData.social_links,
+                              facebook: e.target.value,
+                            },
+                          })
+                        }
+                        placeholder="https://facebook.com/yourprofile"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor={`twitter-${candidacy.id}`}>Twitter</Label>
+                      <Input
+                        id={`twitter-${candidacy.id}`}
+                        value={formData.social_links.twitter || ""}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            social_links: {
+                              ...formData.social_links,
+                              twitter: e.target.value,
+                            },
+                          })
+                        }
+                        placeholder="https://twitter.com/yourprofile"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor={`instagram-${candidacy.id}`}>
+                        Instagram
+                      </Label>
+                      <Input
+                        id={`instagram-${candidacy.id}`}
+                        value={formData.social_links.instagram || ""}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            social_links: {
+                              ...formData.social_links,
+                              instagram: e.target.value,
+                            },
+                          })
+                        }
+                        placeholder="https://instagram.com/yourprofile"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor={`logo-upload-${candidacy.id}`}>
+                        Campaign Logo
+                      </Label>
+                      <Input
+                        id={`logo-upload-${candidacy.id}`}
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) =>
+                          setSelectedLogoFile(
+                            e.target.files ? e.target.files[0] : null,
+                          )
+                        }
+                      />
+                      {(selectedLogoFile || formData.campaign_logo_url) && (
+                        <div className="mt-2 flex items-center gap-2">
+                          {selectedLogoFile ? (
+                            <img
+                              src={URL.createObjectURL(selectedLogoFile)}
+                              alt="New campaign logo preview"
+                              className="w-20 h-20 object-cover rounded"
+                            />
+                          ) : (
+                            formData.campaign_logo_url && (
+                              <img
+                                src={formData.campaign_logo_url}
+                                alt="Current campaign logo"
+                                className="w-20 h-20 object-cover rounded"
+                              />
+                            )
+                          )}
+                          <p className="text-sm text-muted-foreground">
+                            {selectedLogoFile
+                              ? selectedLogoFile.name
+                              : formData.campaign_logo_url
+                                ? "Current logo"
+                                : ""}
+                          </p>
+                          {formData.campaign_logo_url && !selectedLogoFile && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() =>
+                                setFormData({
+                                  ...formData,
+                                  campaign_logo_url: "",
+                                })
+                              }
+                            >
+                              Clear
+                            </Button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <Label htmlFor={`manifesto-upload-${candidacy.id}`}>
+                        Manifesto (PDF)
+                      </Label>
+                      <Input
+                        id={`manifesto-upload-${candidacy.id}`}
+                        type="file"
+                        accept="application/pdf"
+                        onChange={(e) =>
+                          setSelectedManifestoFile(
+                            e.target.files ? e.target.files[0] : null,
+                          )
+                        }
+                      />
+                      {(selectedManifestoFile || formData.manifesto_url) && (
+                        <div className="mt-2 flex items-center gap-2">
+                          {selectedManifestoFile ? (
+                            <p className="text-sm text-muted-foreground">
+                              {selectedManifestoFile.name}
+                            </p>
+                          ) : (
+                            formData.manifesto_url && (
+                              <a
+                                href={formData.manifesto_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-primary hover:underline flex items-center gap-1 text-sm"
+                              >
+                                <ExternalLink className="h-4 w-4" /> Current
+                                Manifesto
+                              </a>
+                            )
+                          )}
+                          {formData.manifesto_url && !selectedManifestoFile && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() =>
+                                setFormData({ ...formData, manifesto_url: "" })
+                              }
+                            >
+                              Clear
+                            </Button>
+                          )}
+                        </div>
+                      )}
                     </div>
                     <div className="flex gap-2">
                       <Button onClick={() => handleUpdate(candidacy.id)}>
