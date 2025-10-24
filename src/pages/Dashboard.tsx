@@ -162,7 +162,7 @@ const Dashboard = () => {
           </Card>
           <Card
             className="hover:shadow-lg transition-shadow cursor-pointer"
-            onClick={() => navigate("/PublicResults")}
+            onClick={() => navigate("/results")}
           >
             <CardHeader>
               <Vote className="h-8 w-8 text-primary mb-2" />

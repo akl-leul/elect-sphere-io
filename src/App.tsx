@@ -59,7 +59,7 @@ const App = () => (
           <Route path="/candidates" element={<CandidatesList />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="/anonymous-vote" element={<AnonymousVote />} />
-          <Route path="/PublicResults" element={<PublicResults />} />
+          <Route path="/results" element={<PublicResults />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

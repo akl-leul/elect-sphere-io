@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Card,
@@ -26,6 +27,7 @@ import {
 } from "recharts";
 import { Trophy, Loader2 } from "lucide-react";
 
+// --- TYPE DEFINITIONS ---
 interface Election {
   id: string;
   title: string;
@@ -63,135 +65,208 @@ interface Result {
 }
 
 const PublicResults = () => {
+  // --- STATE ---
   const [elections, setElections] = useState<Election[]>([]);
   const [selectedElection, setSelectedElection] = useState<string>("");
   const [results, setResults] = useState<Result[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [resultsLoading, setResultsLoading] = useState(false);
+  const [loadingElections, setLoadingElections] = useState(true);
+  const [loadingResults, setLoadingResults] = useState(false);
 
+  // --- EFFECTS ---
+  // Fetch the list of elections with visible results when the component mounts.
   useEffect(() => {
+    const fetchElections = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("elections")
+          .select("id, title")
+          .eq("results_visible", true)
+          .order("created_at", { ascending: false });
+
+        if (error) throw error;
+
+        setElections(data || []);
+        // If elections are found, automatically select the first one.
+        if (data && data.length > 0) {
+          setSelectedElection(data[0].id);
+        }
+      } catch (error: any) {
+        toast.error("Failed to fetch elections");
+      } finally {
+        setLoadingElections(false);
+      }
+    };
+
     fetchElections();
   }, []);
 
+  // Fetch the results for the currently selected election.
   useEffect(() => {
+    const fetchResults = async (electionId: string) => {
+      setLoadingResults(true);
+      setResults([]); // Clear previous results
+      try {
+        // Step 1: Get vote counts from the secure RPC function.
+        const { data: voteCounts, error: rpcError } = await supabase.rpc(
+          "get_election_results",
+          { p_election_id: electionId },
+        );
+        if (rpcError) throw rpcError;
+
+        // Step 2: Get all positions for this election.
+        const { data: positions, error: posError } = await supabase
+          .from("positions")
+          .select("id, title")
+          .eq("election_id", electionId)
+          .order("display_order");
+        if (posError) throw posError;
+        const typedPositions = (positions as Position[]) || [];
+
+        // Step 3: Get all approved candidates for this election.
+        const { data: candidates, error: candError } = await supabase
+          .from("candidates")
+          .select(
+            "id, position_id, campaign_logo_url, profiles:user_id (full_name)",
+          )
+          .eq("election_id", electionId)
+          .eq("is_approved", true);
+        if (candError) throw candError;
+        const typedCandidates = (candidates as Candidate[]) || [];
+
+        // Step 4: Process and combine the data.
+        const candidateMap = new Map(
+          typedCandidates.map((cand) => [
+            cand.id,
+            {
+              name: cand.profiles?.full_name ?? "Unknown Candidate",
+              logo: cand.campaign_logo_url,
+            },
+          ]),
+        );
+
+        const resultsByPosition = ((voteCounts as VoteCount[]) || []).reduce(
+          (acc: Record<string, ResultCandidate[]>, item) => {
+            const candidate = candidateMap.get(item.candidate_id);
+            if (candidate) {
+              if (!acc[item.position_id]) {
+                acc[item.position_id] = [];
+              }
+              acc[item.position_id].push({
+                name: candidate.name,
+                logo: candidate.logo,
+                votes: item.vote_count,
+              });
+            }
+            return acc;
+          },
+          {},
+        );
+
+        const finalResults: Result[] = typedPositions.map((pos) => ({
+          position: pos.title,
+          candidates: (resultsByPosition[pos.id] || []).sort(
+            (a, b) => b.votes - a.votes,
+          ),
+        }));
+
+        setResults(finalResults);
+      } catch (error: any) {
+        toast.error("Failed to fetch results");
+      } finally {
+        setLoadingResults(false);
+      }
+    };
+
     if (selectedElection) {
       fetchResults(selectedElection);
-
-      const interval = setInterval(() => {
-        fetchResults(selectedElection);
-      }, 15000); // Refresh every 15 seconds
-
-      return () => clearInterval(interval);
     }
   }, [selectedElection]);
 
-  const fetchElections = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("elections")
-        .select("*")
-        .eq("results_visible", true)
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      setElections(data || []);
-      if (data && data.length > 0) {
-        setSelectedElection(data[0].id);
-      }
-    } catch (error: any) {
-      toast.error("Failed to fetch elections");
-    } finally {
-      setLoading(false);
+  // --- RENDER LOGIC ---
+  const renderContent = () => {
+    if (loadingResults) {
+      return (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      );
     }
-  };
 
-  const fetchResults = async (electionId: string) => {
-    setResultsLoading(true);
-    try {
-      const { data, error: rpcError } = await supabase.rpc(
-        "get_election_results",
-        { p_election_id: electionId },
+    if (results.every((r) => r.candidates.length === 0)) {
+      return (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <p className="text-muted-foreground">
+              No results are available for this election yet.
+            </p>
+          </CardContent>
+        </Card>
       );
-
-      if (rpcError) throw rpcError;
-      const voteCounts = (data as VoteCount[]) || [];
-
-      // Fetch positions
-      const { data: positions, error: posError } = await supabase
-        .from("positions")
-        .select("id, title")
-        .eq("election_id", electionId)
-        .order("display_order");
-
-      if (posError) throw posError;
-      const typedPositions = (positions as Position[]) || [];
-
-      // Fetch candidates with details
-      const { data: candidates, error: candError } = await supabase
-        .from("candidates")
-        .select(
-          `
-          id,
-          position_id,
-          campaign_logo_url,
-          profiles:user_id (full_name)
-        `,
-        )
-        .eq("election_id", electionId)
-        .eq("is_approved", true);
-
-      if (candError) throw candError;
-      const typedCandidates = (candidates as Candidate[]) || [];
-
-      // Create maps for quick lookup
-      const candidateMap = new Map(
-        typedCandidates.map((cand) => [
-          cand.id,
-          {
-            name: cand.profiles?.full_name ?? "Unknown Candidate",
-            logo: cand.campaign_logo_url,
-            position_id: cand.position_id,
-          },
-        ]),
-      );
-
-      // Group vote counts by position
-      const resultsByPosition = voteCounts.reduce(
-        (acc: Record<string, ResultCandidate[]>, item) => {
-          const { position_id, candidate_id, vote_count } = item;
-          if (!acc[position_id]) {
-            acc[position_id] = [];
-          }
-          const candidate = candidateMap.get(candidate_id);
-          if (candidate) {
-            acc[position_id].push({
-              name: candidate.name,
-              logo: candidate.logo,
-              votes: vote_count,
-            });
-          }
-          return acc;
-        },
-        {},
-      );
-
-      // Build results array
-      const resultsData: Result[] = typedPositions.map((position) => ({
-        position: position.title,
-        candidates: resultsByPosition[position.id] || [],
-      }));
-
-      setResults(resultsData);
-    } catch (error: any) {
-      toast.error("Failed to fetch results");
-    } finally {
-      setResultsLoading(false);
     }
-  };
 
-  if (loading) {
     return (
-      <div className="flex items-center justify-center h-96">Loading...</div>
+      <div className="space-y-6">
+        {results.map((result, index) => (
+          <Card key={index}>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Trophy className="h-5 w-5 text-primary" />
+                {result.position}
+              </CardTitle>
+              <CardDescription>
+                Total votes:{" "}
+                {result.candidates.reduce((sum, c) => sum + c.votes, 0)}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={result.candidates}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="votes" fill="hsl(var(--primary))" />
+                </BarChart>
+              </ResponsiveContainer>
+
+              <div className="mt-6 space-y-2">
+                {result.candidates.map((candidate, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl font-bold text-muted-foreground">
+                        #{idx + 1}
+                      </span>
+                      {candidate.logo && (
+                        <img
+                          src={candidate.logo}
+                          alt={`${candidate.name} logo`}
+                          className="h-8 w-8 rounded object-cover border"
+                        />
+                      )}
+                      <span className="font-medium">{candidate.name}</span>
+                    </div>
+                    <span className="text-lg font-bold">
+                      {candidate.votes} votes
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  };
+
+  if (loadingElections) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
     );
   }
 
@@ -202,84 +277,29 @@ const PublicResults = () => {
         <p className="text-muted-foreground">View published election results</p>
       </div>
 
-      <Card className="mb-6">
-        <CardContent className="pt-6">
-          <Select value={selectedElection} onValueChange={setSelectedElection}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select an election" />
-            </SelectTrigger>
-            <SelectContent>
-              {elections.map((election) => (
-                <SelectItem key={election.id} value={election.id}>
-                  {election.title}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </CardContent>
-      </Card>
-
-      {resultsLoading ? (
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        </div>
-      ) : results.length > 0 ? (
-        <div className="space-y-6">
-          {results.map((result, index) => (
-            <Card key={index}>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Trophy className="h-5 w-5 text-primary" />
-                  {result.position}
-                </CardTitle>
-                <CardDescription>
-                  Total votes:{" "}
-                  {result.candidates.reduce((sum, c) => sum + c.votes, 0)}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={result.candidates}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Bar dataKey="votes" fill="hsl(var(--primary))" />
-                  </BarChart>
-                </ResponsiveContainer>
-
-                <div className="mt-6 space-y-2">
-                  {result.candidates
-                    .sort((a, b) => b.votes - a.votes)
-                    .map((candidate, idx) => (
-                      <div
-                        key={idx}
-                        className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
-                      >
-                        <div className="flex items-center gap-3">
-                          <span className="text-2xl font-bold text-muted-foreground">
-                            #{idx + 1}
-                          </span>
-                          {candidate.logo && (
-                            <img
-                              src={candidate.logo}
-                              alt={`${candidate.name} logo`}
-                              className="h-8 w-8 rounded object-cover border"
-                            />
-                          )}
-                          <span className="font-medium">{candidate.name}</span>
-                        </div>
-                        <span className="text-lg font-bold">
-                          {candidate.votes} votes
-                        </span>
-                      </div>
-                    ))}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+      {elections.length > 0 ? (
+        <>
+          <Card className="mb-6">
+            <CardContent className="pt-6">
+              <Select
+                value={selectedElection}
+                onValueChange={setSelectedElection}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select an election" />
+                </SelectTrigger>
+                <SelectContent>
+                  {elections.map((election) => (
+                    <SelectItem key={election.id} value={election.id}>
+                      {election.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </CardContent>
+          </Card>
+          {renderContent()}
+        </>
       ) : (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
