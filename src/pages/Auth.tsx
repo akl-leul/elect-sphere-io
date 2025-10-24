@@ -4,9 +4,21 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Vote, Shield } from "lucide-react";
 import { toast } from "sonner";
 import { loginSchema, signupSchema } from "@/lib/validation";
@@ -15,9 +27,9 @@ const Auth = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [loginData, setLoginData] = useState({ email: "", password: "" });
-  const [signupData, setSignupData] = useState({ 
-    email: "", 
-    password: "", 
+  const [signupData, setSignupData] = useState({
+    email: "",
+    password: "",
     fullName: "",
     confirmPassword: "",
     gender: "" as "male" | "female" | "",
@@ -30,8 +42,10 @@ const Auth = () => {
       }
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_IN' && session) {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_IN" && session) {
         ensureProfile().finally(() => navigate("/"));
       }
     });
@@ -45,7 +59,7 @@ const Auth = () => {
 
     try {
       const validated = loginSchema.parse(loginData);
-      
+
       const { error } = await supabase.auth.signInWithPassword({
         email: validated.email,
         password: validated.password,
@@ -71,7 +85,7 @@ const Auth = () => {
 
     try {
       const validated = signupSchema.parse(signupData);
-      
+
       const { error } = await supabase.auth.signUp({
         email: validated.email,
         password: validated.password,
@@ -99,16 +113,32 @@ const Auth = () => {
 
   const ensureProfile = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) return;
+
+      console.log("User retrieved in ensureProfile:", user);
+      console.log("User metadata in ensureProfile:", user.user_metadata);
+
       const { data: existing } = await supabase
         .from("profiles")
         .select("id")
         .eq("id", user.id)
         .single();
       if (!existing) {
-        const fullName = (user.user_metadata?.full_name as string) || signupData.fullName || user.email || "";
-        const gender = (user.user_metadata?.gender as "male" | "female") || signupData.gender || "male";
+        const fullName =
+          (user.user_metadata?.full_name as string) ||
+          signupData.fullName ||
+          user.email ||
+          "";
+        const gender =
+          (user.user_metadata?.gender as "male" | "female") ||
+          signupData.gender ||
+          "male";
+
+        console.log("Gender being prepared for insertion:", gender);
+
         const { error } = await supabase.from("profiles").insert([
           {
             id: user.id,
@@ -120,8 +150,12 @@ const Auth = () => {
           },
         ]);
         if (error) throw error;
+        console.log("Profile inserted successfully for user:", user.id);
+      } else {
+        console.log("Profile already exists for user:", user.id);
       }
-    } catch (e) {
+    } catch (e: any) {
+      console.error("Error in ensureProfile:", e.message);
       // No-op to avoid blocking auth flow
     }
   };
@@ -131,11 +165,15 @@ const Auth = () => {
       <Card className="w-full max-w-md shadow-xl">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
-            
-              <img src="https://sitedu.info/img/logo/primary-logo.webp" alt="" className="w-10 h-10 rounded"/>
-             
+            <img
+              src="https://sitedu.info/img/logo/primary-logo.webp"
+              alt=""
+              className="w-10 h-10 rounded"
+            />
           </div>
-          <CardTitle className="text-2xl font-bold">SIT Election Portal</CardTitle>
+          <CardTitle className="text-2xl font-bold">
+            SIT Election Portal
+          </CardTitle>
           <CardDescription>Cast your vote with confidence</CardDescription>
         </CardHeader>
         <CardContent>
@@ -154,7 +192,9 @@ const Auth = () => {
                     type="email"
                     placeholder="your@email.com"
                     value={loginData.email}
-                    onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
+                    onChange={(e) =>
+                      setLoginData({ ...loginData, email: e.target.value })
+                    }
                     required
                   />
                 </div>
@@ -165,7 +205,9 @@ const Auth = () => {
                     type="password"
                     placeholder="••••••••"
                     value={loginData.password}
-                    onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
+                    onChange={(e) =>
+                      setLoginData({ ...loginData, password: e.target.value })
+                    }
                     required
                   />
                 </div>
@@ -184,7 +226,9 @@ const Auth = () => {
                     type="text"
                     placeholder="John Doe"
                     value={signupData.fullName}
-                    onChange={(e) => setSignupData({ ...signupData, fullName: e.target.value })}
+                    onChange={(e) =>
+                      setSignupData({ ...signupData, fullName: e.target.value })
+                    }
                     required
                   />
                 </div>
@@ -195,7 +239,9 @@ const Auth = () => {
                     type="email"
                     placeholder="your@email.com"
                     value={signupData.email}
-                    onChange={(e) => setSignupData({ ...signupData, email: e.target.value })}
+                    onChange={(e) =>
+                      setSignupData({ ...signupData, email: e.target.value })
+                    }
                     required
                   />
                 </div>
@@ -203,7 +249,9 @@ const Auth = () => {
                   <Label htmlFor="signup-gender">Gender</Label>
                   <Select
                     value={signupData.gender}
-                    onValueChange={(value: "male" | "female") => setSignupData({ ...signupData, gender: value })}
+                    onValueChange={(value: "male" | "female") =>
+                      setSignupData({ ...signupData, gender: value })
+                    }
                     required
                   >
                     <SelectTrigger id="signup-gender">
@@ -222,7 +270,9 @@ const Auth = () => {
                     type="password"
                     placeholder="••••••••"
                     value={signupData.password}
-                    onChange={(e) => setSignupData({ ...signupData, password: e.target.value })}
+                    onChange={(e) =>
+                      setSignupData({ ...signupData, password: e.target.value })
+                    }
                     required
                   />
                 </div>
@@ -233,7 +283,12 @@ const Auth = () => {
                     type="password"
                     placeholder="••••••••"
                     value={signupData.confirmPassword}
-                    onChange={(e) => setSignupData({ ...signupData, confirmPassword: e.target.value })}
+                    onChange={(e) =>
+                      setSignupData({
+                        ...signupData,
+                        confirmPassword: e.target.value,
+                      })
+                    }
                     required
                   />
                 </div>
