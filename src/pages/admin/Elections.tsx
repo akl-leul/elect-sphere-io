@@ -49,6 +49,17 @@ const Elections = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(5);
 
+  const formatToDateTimeLocal = (isoString: string | null) => {
+    if (!isoString) return "";
+    const date = new Date(isoString); // Interprets as UTC if isoString is UTC
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, "0");
+    const day = date.getDate().toString().padStart(2, "0");
+    const hours = date.getHours().toString().padStart(2, "0");
+    const minutes = date.getMinutes().toString().padStart(2, "0");
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  };
+
   useEffect(() => {
     fetchElections();
   }, []);
@@ -80,8 +91,11 @@ const Elections = () => {
         end_date: formData.end_date,
       });
 
+      // Convert local datetime strings from form to UTC ISO strings for storage
       const dataToSubmit = {
         ...validated,
+        start_date: new Date(validated.start_date).toISOString(),
+        end_date: new Date(validated.end_date).toISOString(),
         is_active: formData.is_active,
         registration_enabled: formData.registration_enabled,
         results_visible: formData.results_visible,
@@ -135,12 +149,9 @@ const Elections = () => {
     setFormData({
       title: election.title,
       description: election.description || "",
-      start_date: election.start_date
-        ? new Date(election.start_date).toISOString().slice(0, 16)
-        : "",
-      end_date: election.end_date
-        ? new Date(election.end_date).toISOString().slice(0, 16)
-        : "",
+      // Convert UTC date from DB to local datetime format for input
+      start_date: formatToDateTimeLocal(election.start_date),
+      end_date: formatToDateTimeLocal(election.end_date),
       is_active: election.is_active,
       registration_enabled: election.registration_enabled,
       results_visible: election.results_visible,
