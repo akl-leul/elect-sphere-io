@@ -25,7 +25,7 @@ import CandidatesList from "./pages/Candidates";
 import ViewRequirements from "./pages/candidate/ViewRequirements";
 
 import AnonymousVote from "./pages/AnonymousVote";
-import PublicResults from "./pages/Results";
+import PublicResults from "./pages/PublicResults";
 const queryClient = new QueryClient();
 
 const App = () => (
