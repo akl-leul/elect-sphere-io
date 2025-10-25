@@ -251,9 +251,7 @@ const Candidates = () => {
                               ([platform, url]) => (
                                 <a
                                   key={platform}
-                                  href={url
-
-                                  }
+                                  href={url}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   className="text-primary hover:underline text-sm"
