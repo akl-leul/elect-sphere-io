@@ -21,7 +21,20 @@ import { cn } from "@/lib/utils";
 import { useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { Vote, Settings, Users, UserCheck, FileText, BarChart3, LayoutGrid, ListChecks, FolderOpen, Trophy, LogOut, ClipboardCheck } from "lucide-react";
+import {
+  Vote,
+  Settings,
+  Users,
+  UserCheck,
+  FileText,
+  BarChart3,
+  LayoutGrid,
+  ListChecks,
+  FolderOpen,
+  Trophy,
+  LogOut,
+  ClipboardCheck,
+} from "lucide-react";
 import ThemeToggle from "@/components/ui/theme-toggle";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -39,7 +52,11 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
       { to: "/admin/analytics", label: "Analytics", icon: BarChart3 },
       { to: "/admin/elections", label: "Elections", icon: Settings },
       { to: "/admin/positions", label: "Positions", icon: ListChecks },
-      { to: "/admin/requirements", label: "Requirements", icon: ClipboardCheck },
+      {
+        to: "/admin/requirements",
+        label: "Requirements",
+        icon: ClipboardCheck,
+      },
       { to: "/admin/candidates", label: "Candidates", icon: UserCheck },
       { to: "/admin/voters", label: "Voters", icon: Users },
       { to: "/admin/results", label: "Results", icon: Trophy },
@@ -55,8 +72,12 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
       <Sidebar variant="inset" collapsible="icon">
         <SidebarHeader>
           <div className="flex items-center gap-2 px-2 py-1.5">
-            <img src="https://sitedu.info/img/logo/primary-logo.webp" alt="SIT Logo" className="w-10 h-10 rounded" />
-            <span className="font-semibold">Admin</span> 
+            <img
+              src="https://sitedu.info/img/logo/primary-logo.webp"
+              alt="SIT Logo"
+              className="w-10 h-10 rounded"
+            />
+            <span className="font-semibold">Admin</span>
           </div>
         </SidebarHeader>
         <SidebarContent>
@@ -85,9 +106,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
         <SidebarSeparator />
         <SidebarFooter>
           <div className="px-2">
-             
-             
-             <Button
+            <Button
               variant="outline"
               size="icon"
               className="w-full hover:bg-red-600"
@@ -96,7 +115,9 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                 toast.success("Logged out successfully");
                 navigate("/auth");
               }}
-            > <span className="">Logout</span>
+            >
+              {" "}
+              <span className="">Logout</span>
               <LogOut className="h-4 w-4" />
             </Button>
           </div>
@@ -137,5 +158,3 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
 };
 
 export default AdminLayout;
-
-

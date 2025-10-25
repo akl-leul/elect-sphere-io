@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 // --- TYPE DEFINITIONS ---
 interface Profile {
   full_name: string;
-  role: string;
 }
 
 // --- COMPONENT DEFINITION ---
@@ -16,8 +15,6 @@ const Navbar: React.FC = () => {
   // --- STATE ---
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [loading, setLoading] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
 
@@ -30,7 +27,6 @@ const Navbar: React.FC = () => {
 
     const { data: authListener } = supabase.auth.onAuthStateChange(
       (_event, session) => {
-        console.log("Navbar Auth State Change:", session);
         setSession(session);
       },
     );
@@ -43,38 +39,24 @@ const Navbar: React.FC = () => {
 
   // Effect to fetch user profile when the session is active.
   useEffect(() => {
-    setLoading(true);
     if (session?.user) {
       const fetchProfile = async () => {
         try {
           const { data, error } = await supabase
             .from("profiles")
-            .select("full_name, role")
+            .select("full_name")
             .eq("id", session.user.id)
             .single();
 
           if (error) throw error;
-
-          console.log("Navbar Profile Data:", data);
-          if (data) {
-            setProfile(data);
-            setIsAdmin(data.role === "admin");
-          } else {
-            // If no profile found, assume not an admin
-            setIsAdmin(false);
-          }
+          if (data) setProfile(data);
         } catch (error: any) {
           console.error("Error fetching profile:", error.message);
-          setIsAdmin(false);
-        } finally {
-          setLoading(false);
         }
       };
       fetchProfile();
     } else {
       setProfile(null);
-      setIsAdmin(true);
-      setLoading(false);
     }
   }, [session]);
 
@@ -100,18 +82,23 @@ const Navbar: React.FC = () => {
   const user = session?.user;
 
   // --- RENDER LOGIC ---
-  console.log("Navbar Render State:", {
-    loading,
-    isAdmin,
-    profile,
-    user: session?.user,
-  });
-  if (loading) {
-    return null; // Prevent rendering until user role is confirmed
-  }
-
-  if (isAdmin) {
-    return null; // Hide navbar for admin users
+  {
+    !user && (
+      <div className="flex items-center gap-2">
+        <button
+          className="text-sm font-medium text-muted-foreground hover:text-primary"
+          onClick={() => navigate("/auth")}
+        >
+          Login
+        </button>
+        <button
+          className="text-sm font-medium text-muted-foreground hover:text-primary"
+          onClick={() => navigate("/register")}
+        >
+          Register
+        </button>
+      </div>
+    );
   }
   return (
     <nav className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-10">
