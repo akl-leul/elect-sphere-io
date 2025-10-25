@@ -245,6 +245,26 @@ const Candidates = () => {
                             View Full Manifesto
                           </a>
                         )}
+                        {candidate.social_links && (
+                          <div className="space-x-2">
+                            {Object.entries(candidate.social_links).map(
+                              ([platform, url]) => (
+                                <a
+                                  key={platform}
+                                  href={url
+
+                                  }
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-primary hover:underline text-sm"
+                                >
+                                  {platform.charAt(0).toUpperCase() +
+                                    platform.slice(1)}
+                                </a>
+                              ),
+                            )}
+                          </div>
+                        )}
                       </CardContent>
                     </Card>
                   ))}

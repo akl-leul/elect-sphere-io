@@ -387,11 +387,22 @@ const Candidates = () => {
                 {selectedCandidate.social_links && (
                   <div>
                     <h3 className="font-semibold mb-1">Social Links</h3>
-                    <div className="text-sm space-y-1">
-                      {Object.entries(selectedCandidate.social_links).map(([key, value]) => (
-                        <p key={key}><strong>{key}:</strong> {value as string}</p>
-                      ))}
-                    </div>
+                  <div className="text-sm space-y-1">
+  {Object.entries(selectedCandidate.social_links).map(([key, value]) => (
+    <p key={key}>
+      <strong>{key}:</strong>{" "}
+      <a
+        href={value as string}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-blue-600 hover:underline"
+      >
+        {value as string}
+      </a>
+    </p>
+  ))}
+</div>
+
                   </div>
                 )}
               </div>
