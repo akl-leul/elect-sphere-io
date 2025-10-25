@@ -295,12 +295,12 @@ const MyCandidacy = () => {
                       </p>
                     </div>
                     <div>
-                      <Label htmlFor={`facebook-${candidacy.id}`}>
-                        Facebook
+                      <Label htmlFor={`LinkedIn-${candidacy.id}`}>
+                        LinkedIn
                       </Label>
                       <Input
-                        id={`facebook-${candidacy.id}`}
-                        value={formData.social_links.facebook || ""}
+                        id={`LinkedIn-${candidacy.id}`}
+                        value={formData.social_links.LinkedIn || ""}
                         onChange={(e) =>
                           setFormData({
                             ...formData,
@@ -310,7 +310,7 @@ const MyCandidacy = () => {
                             },
                           })
                         }
-                        placeholder="https://facebook.com/yourprofile"
+                        placeholder="https://LinkedIn.com/yourprofile"
                       />
                     </div>
                     <div>
