@@ -2,13 +2,32 @@ import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
-import { UserCheck, Upload, Image as ImageIcon, FileText, Loader2, ExternalLink } from "lucide-react";
+import {
+  UserCheck,
+  Upload,
+  Image as ImageIcon,
+  FileText,
+  Loader2,
+  ExternalLink,
+} from "lucide-react";
 import { candidateSchema } from "@/lib/validation";
 
 const Register = () => {
@@ -49,14 +68,17 @@ const Register = () => {
 
       if (error) throw error;
       setElections(data || []);
-      
+
       // Fetch requirements for all elections
       if (data && data.length > 0) {
         const { data: reqData, error: reqError } = await supabase
           .from("election_requirements")
           .select("*")
-          .in("election_id", data.map(e => e.id));
-        
+          .in(
+            "election_id",
+            data.map((e) => e.id),
+          );
+
         if (!reqError) {
           setRequirements(reqData || []);
         }
@@ -89,22 +111,26 @@ const Register = () => {
     fetchPositions(electionId);
   };
 
-  const uploadFile = async (file: File, bucket: string, folder: string): Promise<string> => {
-    const fileExt = file.name.split('.').pop();
+  const uploadFile = async (
+    file: File,
+    bucket: string,
+    folder: string,
+  ): Promise<string> => {
+    const fileExt = file.name.split(".").pop();
     const fileName = `${folder}/${Date.now()}.${fileExt}`;
-    
+
     const { error: uploadError } = await supabase.storage
       .from(bucket)
       .upload(fileName, file, {
-        cacheControl: '3600',
-        upsert: false
+        cacheControl: "3600",
+        upsert: false,
       });
 
     if (uploadError) throw uploadError;
 
-    const { data: { publicUrl } } = supabase.storage
-      .from(bucket)
-      .getPublicUrl(fileName);
+    const {
+      data: { publicUrl },
+    } = supabase.storage.from(bucket).getPublicUrl(fileName);
 
     return publicUrl;
   };
@@ -112,18 +138,20 @@ const Register = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setUploading(true);
-    
+
     try {
       // Validate form data
       const validated = candidateSchema.parse({
         biography: formData.biography,
         slogan: formData.slogan,
         social_links: Object.fromEntries(
-          Object.entries(formData.social_links).filter(([_, v]) => v !== "")
+          Object.entries(formData.social_links).filter(([_, v]) => v !== ""),
         ),
       });
 
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) {
         toast.error("You must be logged in to register as a candidate");
         navigate("/auth");
@@ -149,28 +177,40 @@ const Register = () => {
       let manifestoUrl = formData.manifesto_url;
 
       if (logoFile) {
-        logoUrl = await uploadFile(logoFile, 'candidate-files', `${user.id}/logos`);
+        logoUrl = await uploadFile(
+          logoFile,
+          "candidate-files",
+          `${user.id}/logos`,
+        );
       }
 
       if (manifestoFile) {
-        manifestoUrl = await uploadFile(manifestoFile, 'candidate-files', `${user.id}/manifestos`);
+        manifestoUrl = await uploadFile(
+          manifestoFile,
+          "candidate-files",
+          `${user.id}/manifestos`,
+        );
       }
 
-      const { error } = await supabase.from("candidates").insert([{
-        user_id: user.id,
-        election_id: formData.election_id,
-        position_id: formData.position_id,
-        slogan: validated.slogan,
-        biography: validated.biography,
-        campaign_logo_url: logoUrl,
-        manifesto_url: manifestoUrl,
-        social_links: validated.social_links,
-        agreed_to_requirements: agreedToRequirements,
-      }]);
+      const { error } = await supabase.from("candidates").insert([
+        {
+          user_id: user.id,
+          election_id: formData.election_id,
+          position_id: formData.position_id,
+          slogan: validated.slogan,
+          biography: validated.biography,
+          campaign_logo_url: logoUrl,
+          manifesto_url: manifestoUrl,
+          social_links: validated.social_links,
+          agreed_to_requirements: agreedToRequirements,
+        },
+      ]);
 
       if (error) throw error;
 
-      toast.success("Candidate application submitted successfully! Awaiting approval.");
+      toast.success(
+        "Candidate application submitted successfully! Awaiting approval.",
+      );
       navigate("/dashboard");
     } catch (error: any) {
       if (error.errors) {
@@ -184,7 +224,9 @@ const Register = () => {
   };
 
   if (loading) {
-    return <div className="flex items-center justify-center h-96">Loading...</div>;
+    return (
+      <div className="flex items-center justify-center h-96">Loading...</div>
+    );
   }
 
   if (elections.length === 0) {
@@ -192,8 +234,12 @@ const Register = () => {
       <div className="container mx-auto px-4 py-8">
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
-             <img src="https://sitedu.info/img/logo/primary-logo.webp" alt="" className="w-10 h-10 rounded"/>
-        
+            <img
+              src="https://sitedu.info/img/logo/primary-logo.webp"
+              alt=""
+              className="w-10 h-10 rounded"
+            />
+
             <p className="text-muted-foreground">
               Candidate registration is not currently open
             </p>
@@ -206,8 +252,12 @@ const Register = () => {
   return (
     <div className="container mx-auto px-4 py-8 max-w-2xl">
       <div className="mb-8 flex">
-         <img src="https://sitedu.info/img/logo/primary-logo.webp" alt="" className="w-10 h-10 rounded"/>
-             
+        <img
+          src="https://sitedu.info/img/logo/primary-logo.webp"
+          alt=""
+          className="w-10 h-10 rounded"
+        />
+
         <h1 className="text-4xl font-bold mb-2">Register as Candidate</h1>
         <p className="text-muted-foreground">Apply to run in an election</p>
       </div>
@@ -217,17 +267,20 @@ const Register = () => {
           <CardTitle>Candidate Application</CardTitle>
           <CardDescription>
             <p className="text-sm text-muted-foreground">
-              Fill in your details to apply as a candidate. Applications are subject to admin approval.
+              Fill in your details to apply as a candidate. Applications are
+              subject to admin approval.
             </p>
-            {formData.election_id && requirements.filter(r => r.election_id === formData.election_id).length > 0 && (
-              <Link 
-                to={`/candidate/requirements?election=${formData.election_id}`}
-                className="inline-flex items-center gap-1 text-sm text-primary hover:underline mt-2"
-              >
-                <ExternalLink className="h-3 w-3" />
-                View Election Requirements
-              </Link>
-            )}
+            {formData.election_id &&
+              requirements.filter((r) => r.election_id === formData.election_id)
+                .length > 0 && (
+                <Link
+                  to={`/candidate/requirements?election=${formData.election_id}`}
+                  className="inline-flex items-center gap-1 text-sm text-primary hover:underline mt-2"
+                >
+                  <ExternalLink className="h-3 w-3" />
+                  View Election Requirements
+                </Link>
+              )}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -349,14 +402,14 @@ const Register = () => {
             <div className="space-y-3">
               <Label>Social Media Links (Optional)</Label>
               <Input
-                placeholder="Facebook URL"
-                value={formData.social_links.facebook}
+                placeholder="LinkedIn URL"
+                value={formData.social_links.LinkedIn}
                 onChange={(e) =>
                   setFormData({
                     ...formData,
                     social_links: {
                       ...formData.social_links,
-                      facebook: e.target.value,
+                      LinkedIn: e.target.value,
                     },
                   })
                 }
@@ -390,51 +443,76 @@ const Register = () => {
             </div>
 
             {/* Display Requirements if they exist for selected election */}
-            {formData.election_id && requirements.filter(r => r.election_id === formData.election_id).length > 0 && (
-              <div className="space-y-4 border-t pt-4">
-                <h3 className="font-semibold text-lg">Election Requirements & Policies</h3>
-                {requirements
-                  .filter(r => r.election_id === formData.election_id)
-                  .map((req) => (
-                    <Card key={req.id} className="p-4">
-                      <h4 className="font-medium mb-2">{req.title}</h4>
-                      <div className="text-sm text-muted-foreground whitespace-pre-wrap max-h-60 overflow-y-auto border rounded p-3 bg-muted/20">
-                        {req.content}
-                      </div>
-                      {req.document_url && (
-                        <Button
-                          type="button"
-                          variant="link"
-                          size="sm"
-                          className="mt-2 px-0"
-                          onClick={() => window.open(req.document_url, '_blank')}
-                        >
-                          View Original Document
-                        </Button>
-                      )}
-                    </Card>
-                  ))}
-                
-                <div className="flex items-start gap-3 p-4 border rounded bg-muted/10">
-                  <input
-                    type="checkbox"
-                    id="agree-requirements"
-                    checked={agreedToRequirements}
-                    onChange={(e) => setAgreedToRequirements(e.target.checked)}
-                    className="mt-1 h-4 w-4 rounded border-gray-300"
-                    required
-                  />
-                  <label htmlFor="agree-requirements" className="text-sm cursor-pointer">
-                    <span className="font-medium">I agree to all the requirements and policies</span>
-                    <p className="text-muted-foreground mt-1">
-                      By checking this box, I confirm that I have read, understood, and agree to comply with all the election requirements, policies, and regulations stated above.
-                    </p>
-                  </label>
-                </div>
-              </div>
-            )}
+            {formData.election_id &&
+              requirements.filter((r) => r.election_id === formData.election_id)
+                .length > 0 && (
+                <div className="space-y-4 border-t pt-4">
+                  <h3 className="font-semibold text-lg">
+                    Election Requirements & Policies
+                  </h3>
+                  {requirements
+                    .filter((r) => r.election_id === formData.election_id)
+                    .map((req) => (
+                      <Card key={req.id} className="p-4">
+                        <h4 className="font-medium mb-2">{req.title}</h4>
+                        <div className="text-sm text-muted-foreground whitespace-pre-wrap max-h-60 overflow-y-auto border rounded p-3 bg-muted/20">
+                          {req.content}
+                        </div>
+                        {req.document_url && (
+                          <Button
+                            type="button"
+                            variant="link"
+                            size="sm"
+                            className="mt-2 px-0"
+                            onClick={() =>
+                              window.open(req.document_url, "_blank")
+                            }
+                          >
+                            View Original Document
+                          </Button>
+                        )}
+                      </Card>
+                    ))}
 
-            <Button type="submit" className="w-full" disabled={uploading || (requirements.filter(r => r.election_id === formData.election_id).length > 0 && !agreedToRequirements)}>
+                  <div className="flex items-start gap-3 p-4 border rounded bg-muted/10">
+                    <input
+                      type="checkbox"
+                      id="agree-requirements"
+                      checked={agreedToRequirements}
+                      onChange={(e) =>
+                        setAgreedToRequirements(e.target.checked)
+                      }
+                      className="mt-1 h-4 w-4 rounded border-gray-300"
+                      required
+                    />
+                    <label
+                      htmlFor="agree-requirements"
+                      className="text-sm cursor-pointer"
+                    >
+                      <span className="font-medium">
+                        I agree to all the requirements and policies
+                      </span>
+                      <p className="text-muted-foreground mt-1">
+                        By checking this box, I confirm that I have read,
+                        understood, and agree to comply with all the election
+                        requirements, policies, and regulations stated above.
+                      </p>
+                    </label>
+                  </div>
+                </div>
+              )}
+
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={
+                uploading ||
+                (requirements.filter(
+                  (r) => r.election_id === formData.election_id,
+                ).length > 0 &&
+                  !agreedToRequirements)
+              }
+            >
               {uploading ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -448,7 +526,8 @@ const Register = () => {
               )}
             </Button>
             <p className="text-xs text-center text-muted-foreground">
-              Your application will be reviewed by administrators before approval
+              Your application will be reviewed by administrators before
+              approval
             </p>
           </form>
         </CardContent>
