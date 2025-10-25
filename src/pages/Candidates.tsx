@@ -136,7 +136,7 @@ const Candidates = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 py-8 pb-10">
       <div className="mb-8">
         <h1 className="text-4xl font-bold mb-2">Election Candidates</h1>
         <p className="text-muted-foreground mb-4">

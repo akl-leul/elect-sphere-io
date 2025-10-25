@@ -41,9 +41,9 @@ interface Position {
 interface Candidate {
   id: string;
   position_id: string;
-  campaign_logo_url: string | null;
   profiles: {
     full_name: string;
+    avatar_url: string | null;
   } | null;
 }
 
@@ -55,7 +55,7 @@ interface VoteCount {
 
 interface ResultCandidate {
   name: string;
-  logo: string | null;
+  avatarUrl: string | null;
   votes: number;
 }
 
@@ -125,9 +125,7 @@ const PublicResults = () => {
         // Step 3: Get all approved candidates for this election.
         const { data: candidates, error: candError } = await supabase
           .from("candidates")
-          .select(
-            "id, position_id, campaign_logo_url, profiles:user_id (full_name)",
-          )
+          .select("id, position_id, profiles:user_id (full_name, avatar_url)")
           .eq("election_id", electionId);
         if (candError) throw candError;
         const typedCandidates = (candidates as Candidate[]) || [];
@@ -147,7 +145,7 @@ const PublicResults = () => {
             }
             acc[cand.position_id].push({
               name: cand.profiles?.full_name ?? "Unknown Candidate",
-              logo: cand.campaign_logo_url,
+              avatarUrl: cand.profiles?.avatar_url ?? null,
               votes: voteCountMap.get(cand.id) || 0, // Default to 0 votes
             });
             return acc;
@@ -233,11 +231,11 @@ const PublicResults = () => {
                       <span className="text-2xl font-bold text-muted-foreground">
                         #{idx + 1}
                       </span>
-                      {candidate.logo && (
+                      {candidate.avatarUrl && (
                         <img
-                          src={candidate.logo}
-                          alt={`${candidate.name} logo`}
-                          className="h-8 w-8 rounded object-cover border"
+                          src={candidate.avatarUrl}
+                          alt={`${candidate.name} profile picture`}
+                          className="h-8 w-8 rounded-full object-cover border"
                         />
                       )}
                       <span className="font-medium">{candidate.name}</span>

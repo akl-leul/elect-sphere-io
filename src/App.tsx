@@ -26,6 +26,8 @@ import ViewRequirements from "./pages/candidate/ViewRequirements";
 
 import AnonymousVote from "./pages/AnonymousVote";
 import PublicResults from "./pages/PublicResults";
+
+import Navbar from "./components/Navbar";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -34,6 +36,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <Navbar />
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/auth" element={<Auth />} />
