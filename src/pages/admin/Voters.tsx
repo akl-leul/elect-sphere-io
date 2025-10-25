@@ -64,41 +64,20 @@ const Voters = () => {
   const [selected, setSelected] = useState<string[]>([]);
   const selectAllRef = useRef<HTMLInputElement>(null);
 
-  // New states for filtering
-  const [selectedVerificationStatus, setSelectedVerificationStatus] =
-    useState<string>("all"); // "all", "pending", "approved", "suspended"
-
   useEffect(() => {
     fetchVoters();
-  }, [selectedVerificationStatus, searchTerm, currentPage]); // Re-fetch when filters or search term change
+  }, []);
 
   const fetchVoters = async () => {
     setLoading(true);
     try {
-      let query = supabase
+      const { data, error } = await supabase
         .from("profiles")
         .select("*")
         .order("created_at", { ascending: false });
 
-      if (selectedVerificationStatus === "approved") {
-        query = query.eq("is_approved", true);
-      } else if (selectedVerificationStatus === "pending") {
-        query = query.eq("is_approved", false);
-      } else if (selectedVerificationStatus === "suspended") {
-        query = query.eq("is_suspended", true);
-      }
-
-      // Note: Filtering by election is not directly feasible for a generic 'voter'
-      // profile without an 'election_id' on the profiles table itself.
-      // If voters are tied to elections via a join table or specific election registrations,
-      // that would require a different query structure.
-      // For now, we focus on verification and suspension status for the voter profiles.
-
-      const { data, error } = await query;
-
       if (error) throw error;
       setVoters(data || []);
-      setCurrentPage(1); // Reset to first page on new filters/search
     } catch (error: any) {
       toast.error("Failed to fetch voters");
     } finally {
@@ -433,7 +412,7 @@ const Voters = () => {
         </div>
 
         {/* Bulk action bar */}
-        <div className="mb-4 flex flex-wrap gap-2">
+        <div className="mb-4 flex gap-2">
           <Button size="sm" variant="default" onClick={handleBulkApprove}>
             Bulk Approve
           </Button>
@@ -476,274 +455,243 @@ const Voters = () => {
           </CardContent>
         </Card>
 
-        {/* Filter Bar */}
-        <Card className="mb-6">
-          <CardContent className="pt-6 flex flex-col sm:flex-row gap-4">
-            <div className="flex-1 min-w-[150px]">
-              <label htmlFor="status-filter" className="sr-only">
-                Filter by Status
-              </label>
-              <select
-                id="status-filter"
-                value={selectedVerificationStatus}
-                onChange={(e) => setSelectedVerificationStatus(e.target.value)}
-                className="block w-full rounded-md border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <option value="all">All Statuses</option>
-                <option value="pending">Pending Approval</option>
-                <option value="approved">Approved</option>
-                <option value="suspended">Suspended</option>
-              </select>
-            </div>
-          </CardContent>
-        </Card>
-
         <Card>
           <CardContent className="pt-6">
-            <div className="overflow-x-auto">
-              <Table className="min-w-full">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="min-w-[40px]">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>
+                    <input
+                      ref={selectAllRef}
+                      type="checkbox"
+                      checked={selectAll}
+                      onChange={(e) => handleSelectAll(e.target.checked)}
+                    />
+                  </TableHead>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Phone</TableHead>
+                  <TableHead>Gender</TableHead>
+                  <TableHead>Avatar</TableHead>
+                  <TableHead>ID Document</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Registered</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {paginatedVoters.map((voter) => (
+                  <TableRow key={voter.id}>
+                    <TableCell>
                       <input
-                        ref={selectAllRef}
                         type="checkbox"
-                        checked={selectAll}
-                        onChange={(e) => handleSelectAll(e.target.checked)}
+                        checked={selected.includes(voter.id)}
+                        onChange={() => handleSelect(voter.id)}
                       />
-                    </TableHead>
-                    <TableHead className="min-w-[120px]">Name</TableHead>
-                    <TableHead className="min-w-[180px]">Email</TableHead>
-                    <TableHead className="min-w-[120px]">Phone</TableHead>
-                    <TableHead className="min-w-[80px]">Gender</TableHead>
-                    <TableHead className="min-w-[80px]">Avatar</TableHead>
-                    <TableHead className="min-w-[120px]">ID Document</TableHead>
-                    <TableHead className="min-w-[150px]">Status</TableHead>
-                    <TableHead className="min-w-[120px]">Registered</TableHead>
-                    <TableHead className="text-right min-w-[280px]">
-                      Actions
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {paginatedVoters.map((voter) => (
-                    <TableRow key={voter.id}>
-                      <TableCell>
-                        <input
-                          type="checkbox"
-                          checked={selected.includes(voter.id)}
-                          onChange={() => handleSelect(voter.id)}
+                    </TableCell>
+                    <TableCell className="font-medium">
+                      {voter.full_name}
+                    </TableCell>
+                    <TableCell>{voter.email}</TableCell>
+                    <TableCell>{voter.phone || "N/A"}</TableCell>
+                    <TableCell className="capitalize">
+                      {voter.gender || "N/A"}
+                    </TableCell>
+                    <TableCell>
+                      {voter.avatar_url ? (
+                        <img
+                          src={voter.avatar_url}
+                          alt={`${voter.full_name} avatar`}
+                          className="h-10 w-10 rounded object-cover border"
                         />
-                      </TableCell>
-                      <TableCell className="font-medium">
-                        {voter.full_name}
-                      </TableCell>
-                      <TableCell>{voter.email}</TableCell>
-                      <TableCell>{voter.phone || "N/A"}</TableCell>
-                      <TableCell className="capitalize">
-                        {voter.gender || "N/A"}
-                      </TableCell>
-                      <TableCell>
-                        {voter.avatar_url ? (
-                          <img
-                            src={voter.avatar_url}
-                            alt={`${voter.full_name} avatar`}
-                            className="h-10 w-10 rounded object-cover border"
-                          />
-                        ) : (
-                          <div className="h-10 w-10 rounded border bg-muted flex items-center justify-center">
-                            <ImageIcon className="h-4 w-4 text-muted-foreground" />
-                          </div>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {voter.identification_url ? (
-                          <button
-                            className="inline-flex items-center gap-1 text-primary underline"
-                            onClick={() => openId(voter.identification_url)}
-                            type="button"
-                          >
-                            <FileText className="h-4 w-4" />
-                            Open
-                            <ExternalLink className="h-3 w-3" />
-                          </button>
-                        ) : (
-                          <span className="text-muted-foreground">N/A</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-2">
-                          {voter.is_approved ? (
-                            <Badge variant="default">Approved</Badge>
-                          ) : (
-                            <Badge variant="secondary">Pending</Badge>
-                          )}
-                          {voter.is_suspended && (
-                            <Badge variant="destructive">Suspended</Badge>
-                          )}
+                      ) : (
+                        <div className="h-10 w-10 rounded border bg-muted flex items-center justify-center">
+                          <ImageIcon className="h-4 w-4 text-muted-foreground" />
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        {new Date(voter.created_at).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex flex-wrap gap-2 justify-end">
-                          <Dialog
-                            open={
-                              editDialogOpen && editingVoter?.id === voter.id
-                            }
-                            onOpenChange={(o) => setEditDialogOpen(o)}
-                          >
-                            <DialogTrigger asChild>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleOpenEdit(voter)}
-                              >
-                                Edit
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent>
-                              <DialogHeader>
-                                <DialogTitle>Edit Voter</DialogTitle>
-                              </DialogHeader>
-                              <form
-                                onSubmit={handleSaveEdit}
-                                className="space-y-4"
-                              >
-                                <div>
-                                  <Label htmlFor="full_name">Full Name</Label>
-                                  <Input
-                                    id="full_name"
-                                    value={editForm.full_name}
-                                    onChange={(e) =>
-                                      setEditForm({
-                                        ...editForm,
-                                        full_name: e.target.value,
-                                      })
-                                    }
-                                  />
-                                </div>
-                                <div>
-                                  <Label htmlFor="phone">Phone</Label>
-                                  <Input
-                                    id="phone"
-                                    value={editForm.phone}
-                                    onChange={(e) =>
-                                      setEditForm({
-                                        ...editForm,
-                                        phone: e.target.value,
-                                      })
-                                    }
-                                  />
-                                </div>
-                                <div>
-                                  <Label htmlFor="gender">Gender</Label>
-                                  <Select
-                                    value={editForm.gender}
-                                    onValueChange={(value) =>
-                                      setEditForm({
-                                        ...editForm,
-                                        gender: value,
-                                      })
-                                    }
-                                  >
-                                    <SelectTrigger>
-                                      <SelectValue placeholder="Select gender" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="male">Male</SelectItem>
-                                      <SelectItem value="female">
-                                        Female
-                                      </SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-                                <div className="flex justify-end gap-2">
-                                  <Button
-                                    type="button"
-                                    variant="outline"
-                                    onClick={() => setEditDialogOpen(false)}
-                                  >
-                                    Cancel
-                                  </Button>
-                                  <Button type="submit">Save</Button>
-                                </div>
-                              </form>
-                            </DialogContent>
-                          </Dialog>
-                          {!voter.is_approved && (
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {voter.identification_url ? (
+                        <button
+                          className="inline-flex items-center gap-1 text-primary underline"
+                          onClick={() => openId(voter.identification_url)}
+                          type="button"
+                        >
+                          <FileText className="h-4 w-4" />
+                          Open
+                          <ExternalLink className="h-3 w-3" />
+                        </button>
+                      ) : (
+                        <span className="text-muted-foreground">N/A</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        {voter.is_approved ? (
+                          <Badge variant="default">Approved</Badge>
+                        ) : (
+                          <Badge variant="secondary">Pending</Badge>
+                        )}
+                        {voter.is_suspended && (
+                          <Badge variant="destructive">Suspended</Badge>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {new Date(voter.created_at).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex gap-2 justify-end">
+                        <Dialog
+                          open={editDialogOpen && editingVoter?.id === voter.id}
+                          onOpenChange={(o) => setEditDialogOpen(o)}
+                        >
+                          <DialogTrigger asChild>
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => handleApprove(voter.id)}
+                              onClick={() => handleOpenEdit(voter)}
                             >
-                              <UserCheck className="h-4 w-4 mr-1" />
-                              Approve
+                              Edit
                             </Button>
-                          )}
-                          {voter.identification_url && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleClearId(voter.id)}
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Edit Voter</DialogTitle>
+                            </DialogHeader>
+                            <form
+                              onSubmit={handleSaveEdit}
+                              className="space-y-4"
                             >
-                              Clear ID
-                            </Button>
-                          )}
-                          {voter.is_suspended ? (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleSuspend(voter.id, false)}
-                            >
-                              <CheckCircle className="h-4 w-4 mr-1" />
-                              Reactivate
-                            </Button>
-                          ) : (
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              onClick={() => handleSuspend(voter.id, true)}
-                            >
-                              <Ban className="h-4 w-4 mr-1" />
-                              Suspend
-                            </Button>
-                          )}
+                              <div>
+                                <Label htmlFor="full_name">Full Name</Label>
+                                <Input
+                                  id="full_name"
+                                  value={editForm.full_name}
+                                  onChange={(e) =>
+                                    setEditForm({
+                                      ...editForm,
+                                      full_name: e.target.value,
+                                    })
+                                  }
+                                />
+                              </div>
+                              <div>
+                                <Label htmlFor="phone">Phone</Label>
+                                <Input
+                                  id="phone"
+                                  value={editForm.phone}
+                                  onChange={(e) =>
+                                    setEditForm({
+                                      ...editForm,
+                                      phone: e.target.value,
+                                    })
+                                  }
+                                />
+                              </div>
+                              <div>
+                                <Label htmlFor="gender">Gender</Label>
+                                <Select
+                                  value={editForm.gender}
+                                  onValueChange={(value) =>
+                                    setEditForm({ ...editForm, gender: value })
+                                  }
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select gender" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="male">Male</SelectItem>
+                                    <SelectItem value="female">
+                                      Female
+                                    </SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <div className="flex justify-end gap-2">
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  onClick={() => setEditDialogOpen(false)}
+                                >
+                                  Cancel
+                                </Button>
+                                <Button type="submit">Save</Button>
+                              </div>
+                            </form>
+                          </DialogContent>
+                        </Dialog>
+                        {!voter.is_approved && (
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => handleOpenPasswordDialog(voter)}
+                            onClick={() => handleApprove(voter.id)}
                           >
-                            <Lock className="h-4 w-4 mr-1" />
-                            Password
+                            <UserCheck className="h-4 w-4 mr-1" />
+                            Approve
                           </Button>
-                          {/* Delete button */}
+                        )}
+                        {voter.identification_url && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleClearId(voter.id)}
+                          >
+                            Clear ID
+                          </Button>
+                        )}
+                        {voter.is_suspended ? (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleSuspend(voter.id, false)}
+                          >
+                            <CheckCircle className="h-4 w-4 mr-1" />
+                            Reactivate
+                          </Button>
+                        ) : (
                           <Button
                             size="sm"
                             variant="destructive"
-                            onClick={() => handleDelete(voter.id)}
-                            title="Delete voter"
+                            onClick={() => handleSuspend(voter.id, true)}
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Ban className="h-4 w-4 mr-1" />
+                            Suspend
                           </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                  {paginatedVoters.length === 0 && (
-                    <TableRow>
-                      <TableCell
-                        colSpan={10}
-                        className="text-center py-8 text-muted-foreground"
-                      >
-                        No voters found
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </div>
+                        )}
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleOpenPasswordDialog(voter)}
+                        >
+                          <Lock className="h-4 w-4 mr-1" />
+                          Password
+                        </Button>
+                        {/* Delete button */}
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => handleDelete(voter.id)}
+                          title="Delete voter"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {paginatedVoters.length === 0 && (
+                  <TableRow>
+                    <TableCell
+                      colSpan={10}
+                      className="text-center py-8 text-muted-foreground"
+                    >
+                      No voters found
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
           </CardContent>
         </Card>
 
