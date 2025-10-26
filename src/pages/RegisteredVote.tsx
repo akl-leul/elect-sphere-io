@@ -12,7 +12,6 @@ import { toast } from "sonner";
 import { Vote as VoteIcon, CheckCircle } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { getDeviceFingerprint, getClientIP } from "@/lib/fingerprint";
 import {
   Select,
   SelectContent,
@@ -43,7 +42,7 @@ interface Candidate {
   manifesto_url: string | null;
 }
 
-const AnonymousVote = () => {
+const RegisteredVote = () => {
   const [elections, setElections] = useState<Election[]>([]);
   const [selectedElection, setSelectedElection] = useState<string>("");
   const [positions, setPositions] = useState<Position[]>([]);
@@ -51,32 +50,57 @@ const AnonymousVote = () => {
   const [votes, setVotes] = useState<Record<string, string>>({});
   const [hasVoted, setHasVoted] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
+  const [profile, setProfile] = useState<any>(null);
+  const [isSuspended, setIsSuspended] = useState(false);
 
   useEffect(() => {
-    fetchElections();
+    fetchData();
   }, []);
 
   useEffect(() => {
-    if (selectedElection) {
+    if (selectedElection && profile?.id && !profile?.is_suspended) {
       fetchPositionsAndCandidates(selectedElection);
     }
-  }, [selectedElection]);
+  }, [selectedElection, profile]);
 
-  const fetchElections = async () => {
+  const fetchData = async () => {
     try {
-      const { data, error } = await supabase
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        setLoading(false);
+        toast.error("You must be logged in to vote.");
+        return;
+      }
+
+      const { data: profileData } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .single();
+
+      setProfile(profileData);
+      setIsSuspended(profileData?.is_suspended);
+
+      if (!profileData?.is_approved || profileData?.is_suspended) {
+        setLoading(false);
+        return;
+      }
+
+      const { data: electionData, error } = await supabase
         .from("elections")
         .select("*")
         .eq("is_active", true)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setElections(data || []);
-      if (data && data.length > 0) {
-        setSelectedElection(data[0].id);
+      setElections(electionData || []);
+      if (electionData && electionData.length > 0) {
+        setSelectedElection(electionData[0].id);
       }
     } catch (error: any) {
-      toast.error("Failed to fetch elections");
+      toast.error("Failed to fetch elections or profile data.");
     } finally {
       setLoading(false);
     }
@@ -84,7 +108,10 @@ const AnonymousVote = () => {
 
   const fetchPositionsAndCandidates = async (electionId: string) => {
     try {
-      const deviceFingerprint = await getDeviceFingerprint();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
 
       const { data: posData } = await supabase
         .from("positions")
@@ -108,12 +135,11 @@ const AnonymousVote = () => {
 
       setCandidates(candData || []);
 
-      // Check which positions this device has already voted for (anonymous)
+      // Check which positions user has already voted for
       const { data: voteData } = await supabase
         .from("votes")
         .select("position_id")
-        .eq("device_fingerprint", deviceFingerprint)
-        .is("voter_id", null)
+        .eq("voter_id", user.id)
         .eq("election_id", electionId);
 
       const votedPositions: Record<string, boolean> = {};
@@ -134,26 +160,23 @@ const AnonymousVote = () => {
         return;
       }
 
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+
       const election = elections.find((e) => e.id === selectedElection);
       if (!election) {
         toast.error("Selected election not found");
         return;
       }
 
-      // Get real device fingerprint and IP
-      const [deviceFingerprint, ipAddress] = await Promise.all([
-        getDeviceFingerprint(),
-        getClientIP(),
-      ]);
-
       const { error } = await supabase.from("votes").insert([
         {
-          voter_id: null,
+          voter_id: user.id,
           election_id: election.id,
           position_id: positionId,
           candidate_id: candidateId,
-          device_fingerprint: deviceFingerprint,
-          ip_address: ipAddress,
         },
       ]);
 
@@ -169,6 +192,48 @@ const AnonymousVote = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">Loading...</div>
+    );
+  }
+
+  if (!profile?.is_approved) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <img
+              src="https://sitedu.info/img/logo/primary-logo.webp"
+              alt=""
+              className="w-10 h-10 rounded"
+            />
+
+            <p className="text-muted-foreground mb-4">
+              Your account is pending approval. You'll be able to vote once an
+              administrator approves your registration.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (isSuspended) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <img
+              src="https://sitedu.info/img/logo/primary-logo.webp"
+              alt=""
+              className="w-10 h-10 rounded"
+            />
+
+            <p className="text-muted-foreground mb-4">
+              Your account has been suspended. You cannot vote at this time.
+              Please contact an administrator for assistance.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
@@ -195,13 +260,9 @@ const AnonymousVote = () => {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
-        <h1 className="text-4xl font-bold mb-2">Cast Your Anonymous Vote</h1>
+        <h1 className="text-4xl font-bold mb-2">Cast Your Vote</h1>
         <p className="text-muted-foreground">
           Select your preferred candidates for each position
-        </p>
-        <p className="text-muted-foreground mt-2">
-          Votes are anonymous but tracked by device fingerprint to prevent
-          multiple voting.
         </p>
 
         <div className="max-w-xs mt-4">
@@ -320,4 +381,4 @@ const AnonymousVote = () => {
   );
 };
 
-export default AnonymousVote;
+export default RegisteredVote;

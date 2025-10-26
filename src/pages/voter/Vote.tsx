@@ -1,7 +1,13 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { toast } from "sonner";
 import { Vote as VoteIcon, CheckCircle } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -16,6 +22,7 @@ const Vote = () => {
   const [hasVoted, setHasVoted] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<any>(null);
+  const [isSuspended, setIsSuspended] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -23,7 +30,9 @@ const Vote = () => {
 
   const fetchData = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) return;
 
       const { data: profileData } = await supabase
@@ -33,8 +42,9 @@ const Vote = () => {
         .single();
 
       setProfile(profileData);
+      setIsSuspended(profileData?.is_suspended);
 
-      if (!profileData?.is_approved) {
+      if (!profileData?.is_approved || profileData?.is_suspended) {
         setLoading(false);
         return;
       }
@@ -62,11 +72,13 @@ const Vote = () => {
 
       const { data: candData } = await supabase
         .from("candidates")
-        .select(`
+        .select(
+          `
           *,
           profiles:user_id (full_name),
           positions:position_id (title)
-        `)
+        `,
+        )
         .eq("election_id", electionData.id)
         .eq("is_approved", true);
 
@@ -99,7 +111,9 @@ const Vote = () => {
         return;
       }
 
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) return;
 
       const election = elections[0];
@@ -131,7 +145,9 @@ const Vote = () => {
   };
 
   if (loading) {
-    return <div className="flex items-center justify-center h-96">Loading...</div>;
+    return (
+      <div className="flex items-center justify-center h-96">Loading...</div>
+    );
   }
 
   if (!profile?.is_approved) {
@@ -139,10 +155,36 @@ const Vote = () => {
       <div className="container mx-auto px-4 py-8">
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
-             <img src="https://sitedu.info/img/logo/primary-logo.webp" alt="" className="w-10 h-10 rounded"/>
-        
+            <img
+              src="https://sitedu.info/img/logo/primary-logo.webp"
+              alt=""
+              className="w-10 h-10 rounded"
+            />
+
             <p className="text-muted-foreground mb-4">
-              Your account is pending approval. You'll be able to vote once an administrator approves your registration.
+              Your account is pending approval. You'll be able to vote once an
+              administrator approves your registration.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (isSuspended) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <img
+              src="https://sitedu.info/img/logo/primary-logo.webp"
+              alt=""
+              className="w-10 h-10 rounded"
+            />
+
+            <p className="text-muted-foreground mb-4">
+              Your account has been suspended. You cannot vote at this time.
+              Please contact an administrator for assistance.
             </p>
           </CardContent>
         </Card>
@@ -155,9 +197,15 @@ const Vote = () => {
       <div className="container mx-auto px-4 py-8">
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
-             <img src="https://sitedu.info/img/logo/primary-logo.webp" alt="" className="w-10 h-10 rounded"/>
-        
-            <p className="text-muted-foreground">No active elections at this time</p>
+            <img
+              src="https://sitedu.info/img/logo/primary-logo.webp"
+              alt=""
+              className="w-10 h-10 rounded"
+            />
+
+            <p className="text-muted-foreground">
+              No active elections at this time
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -168,13 +216,15 @@ const Vote = () => {
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
         <h1 className="text-4xl font-bold mb-2">Cast Your Vote</h1>
-        <p className="text-muted-foreground">Select your preferred candidates for each position</p>
+        <p className="text-muted-foreground">
+          Select your preferred candidates for each position
+        </p>
       </div>
 
       <div className="space-y-6">
         {positions.map((position) => {
           const positionCandidates = candidates.filter(
-            (c) => c.position_id === position.id
+            (c) => c.position_id === position.id,
           );
           const hasVotedForPosition = hasVoted[position.id];
 
@@ -193,7 +243,9 @@ const Vote = () => {
                 {hasVotedForPosition ? (
                   <div className="text-center py-8">
                     <CheckCircle className="h-12 w-12 text-success mx-auto mb-2" />
-                    <p className="text-success font-semibold">You have already voted for this position</p>
+                    <p className="text-success font-semibold">
+                      You have already voted for this position
+                    </p>
                   </div>
                 ) : (
                   <>
@@ -209,8 +261,14 @@ const Vote = () => {
                           key={candidate.id}
                           className="flex items-center space-x-3 p-4 rounded-lg border hover:bg-muted/50 transition-colors"
                         >
-                          <RadioGroupItem value={candidate.id} id={candidate.id} />
-                          <Label htmlFor={candidate.id} className="flex-1 cursor-pointer">
+                          <RadioGroupItem
+                            value={candidate.id}
+                            id={candidate.id}
+                          />
+                          <Label
+                            htmlFor={candidate.id}
+                            className="flex-1 cursor-pointer"
+                          >
                             <div className="flex items-start gap-3">
                               {candidate.campaign_logo_url && (
                                 <img
@@ -220,7 +278,9 @@ const Vote = () => {
                                 />
                               )}
                               <div>
-                                <p className="font-semibold">{candidate.profiles?.full_name}</p>
+                                <p className="font-semibold">
+                                  {candidate.profiles?.full_name}
+                                </p>
                                 {candidate.slogan && (
                                   <p className="text-sm text-muted-foreground italic">
                                     "{candidate.slogan}"

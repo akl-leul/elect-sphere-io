@@ -24,7 +24,7 @@ import MyCandidacy from "./pages/candidate/MyCandidacy";
 import CandidatesList from "./pages/Candidates";
 import ViewRequirements from "./pages/candidate/ViewRequirements";
 
-import AnonymousVote from "./pages/AnonymousVote";
+import AnonymousVote from "./pages/RegisteredVote";
 import PublicResults from "./pages/PublicResults";
 
 import Navbar from "./components/Navbar";
