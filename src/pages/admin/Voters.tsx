@@ -63,18 +63,35 @@ const Voters = () => {
   const [itemsPerPage] = useState(10);
   const [selected, setSelected] = useState<string[]>([]);
   const selectAllRef = useRef<HTMLInputElement>(null);
+  const [filterApprovalStatus, setFilterApprovalStatus] =
+    useState<string>("all"); // "all", "approved", "pending"
+  const [filterSuspensionStatus, setFilterSuspensionStatus] =
+    useState<string>("all"); // "all", "active", "suspended"
 
   useEffect(() => {
     fetchVoters();
-  }, []);
+  }, [filterApprovalStatus, filterSuspensionStatus]);
 
   const fetchVoters = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .order("created_at", { ascending: false });
+      let query = supabase.from("profiles").select("*");
+
+      if (filterApprovalStatus === "approved") {
+        query = query.eq("is_approved", true);
+      } else if (filterApprovalStatus === "pending") {
+        query = query.eq("is_approved", false);
+      }
+
+      if (filterSuspensionStatus === "suspended") {
+        query = query.eq("is_suspended", true);
+      } else if (filterSuspensionStatus === "active") {
+        query = query.eq("is_suspended", false);
+      }
+
+      const { data, error } = await query.order("created_at", {
+        ascending: false,
+      });
 
       if (error) throw error;
       setVoters(data || []);
@@ -442,8 +459,8 @@ const Voters = () => {
         </div>
 
         <Card className="mb-6">
-          <CardContent className="pt-6">
-            <div className="relative">
+          <CardContent className="pt-6 flex gap-4">
+            <div className="relative w-full">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search by name or email..."
@@ -451,6 +468,38 @@ const Voters = () => {
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
               />
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-4 mb-4">
+              {/* Approval Status Filter */}
+              <Select
+                value={filterApprovalStatus}
+                onValueChange={setFilterApprovalStatus}
+              >
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Filter by approval" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="approved">Approved</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {/* Suspension Status Filter */}
+              <Select
+                value={filterSuspensionStatus}
+                onValueChange={setFilterSuspensionStatus}
+              >
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Filter by suspension" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All States</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="suspended">Suspended</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </CardContent>
         </Card>
