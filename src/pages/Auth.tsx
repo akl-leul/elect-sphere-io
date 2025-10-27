@@ -32,25 +32,34 @@ const Auth = () => {
     password: "",
     fullName: "",
     confirmPassword: "",
-    gender: "" as "male" | "female" | "",
+    gender: "", // must never be blank/empty on submit!
   });
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        ensureProfile().finally(() => navigate("/"));
+    let ignore = false;
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (session && !ignore) {
+        // Refetch user so metadata is fresh
+        await supabase.auth.getUser();
+        await ensureProfile();
+        navigate("/");
       }
     });
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === "SIGNED_IN" && session) {
-        ensureProfile().finally(() => navigate("/"));
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === "SIGNED_IN" && session && !ignore) {
+        await supabase.auth.getUser();
+        await ensureProfile();
+        navigate("/");
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      ignore = true;
+      subscription.unsubscribe();
+    };
   }, [navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -66,6 +75,7 @@ const Auth = () => {
       });
 
       if (error) throw error;
+      await supabase.auth.getUser();
       await ensureProfile();
       toast.success("Logged in successfully!");
     } catch (error: any) {
@@ -83,8 +93,16 @@ const Auth = () => {
     e.preventDefault();
     setLoading(true);
 
+    let validated;
     try {
-      const validated = signupSchema.parse(signupData);
+      validated = signupSchema.parse(signupData);
+
+      // Explicitly require gender selection
+      if (!validated.gender) {
+        toast.error("Please select a gender.");
+        setLoading(false);
+        return;
+      }
 
       const { error } = await supabase.auth.signUp({
         email: validated.email,
@@ -118,9 +136,6 @@ const Auth = () => {
       } = await supabase.auth.getUser();
       if (!user) return;
 
-      console.log("User retrieved in ensureProfile:", user);
-      console.log("User metadata in ensureProfile:", user.user_metadata);
-
       const { data: existing } = await supabase
         .from("profiles")
         .select("id")
@@ -128,16 +143,17 @@ const Auth = () => {
         .single();
       if (!existing) {
         const fullName =
-          (user.user_metadata?.full_name as string) ||
           signupData.fullName ||
+          (user.user_metadata?.full_name as string) ||
           user.email ||
           "";
-        const gender =
-          (user.user_metadata?.gender as "male" | "female") ||
-          signupData.gender ||
-          "male";
 
-        console.log("Gender being prepared for insertion:", gender);
+        // CRITICAL: Always use signupData.gender first!
+        let gender =
+          signupData.gender || (user.user_metadata?.gender as string);
+        if (gender !== "male" && gender !== "female") {
+          gender = "male"; // fallback default
+        }
 
         const { error } = await supabase.from("profiles").insert([
           {
@@ -150,13 +166,10 @@ const Auth = () => {
           },
         ]);
         if (error) throw error;
-        console.log("Profile inserted successfully for user:", user.id);
-      } else {
-        console.log("Profile already exists for user:", user.id);
       }
     } catch (e: any) {
       console.error("Error in ensureProfile:", e.message);
-      // No-op to avoid blocking auth flow
+      // No-op
     }
   };
 
@@ -249,7 +262,7 @@ const Auth = () => {
                   <Label htmlFor="signup-gender">Gender</Label>
                   <Select
                     value={signupData.gender}
-                    onValueChange={(value: "male" | "female") =>
+                    onValueChange={(value) =>
                       setSignupData({ ...signupData, gender: value })
                     }
                     required
@@ -298,7 +311,6 @@ const Auth = () => {
               </form>
             </TabsContent>
           </Tabs>
-
           <div className="mt-6 flex items-center gap-2 text-sm text-muted-foreground">
             <Shield className="h-4 w-4" />
             <span>Secure & encrypted authentication</span>

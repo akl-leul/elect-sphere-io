@@ -2,10 +2,23 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Vote, Shield, Users, TrendingUp, CheckCircle2 } from "lucide-react";
-import heroImage from "@/assets/hero-election.png";
+import heroImage from "@/assets/hero-election.jpg";
+
+/*
+  Ethiopian theme:
+  - Primary palette: green (#0a8a3b), yellow (#f2c94c), red (#e03b2d)
+  - Accent neutrals kept dark for contrast
+  - Subtle flag-gradient overlays and patterned accent for hero
+*/
 
 const Index = () => {
   const navigate = useNavigate();
@@ -21,7 +34,9 @@ const Index = () => {
 
   const checkAuth = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       setIsAuthenticated(!!session);
     } catch (err) {
       setError("Error checking authentication.");
@@ -51,136 +66,225 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen font-sans bg-gradient-to-br from-[#131415] to-[#323C43]">
-    {/* Hero Section */}
-<section className="min-h-screen font-sans bg-gradient-to-b from-transparent to-[#006400] relative">
-  <div className="absolute inset-0 opacity-25">
-    <img 
-      src={heroImage} 
-      alt="Shaggar Institute of Technology Student Council Election" 
-      className="w-full h-full object-cover object-center"
-    />
-  </div>
+    <div className="min-h-screen font-sans bg-gradient-to-b from-[#071017] via-[#0b1216] to-[#0f171a] text-white">
+      {/* Hero */}
+      <section className="relative w-full">
+        {/* background image */}
+        <div className="relative h-[80vh] md:h-[72vh] lg:h-[84vh] overflow-hidden">
+          <img
+            src={heroImage}
+            alt="Election hero"
+            className="absolute inset-0 w-full h-full object-cover object-center filter brightness-50"
+            loading="lazy"
+          />
 
-  <div className="mx-auto px-4 py-20 relative z-10 h-screen flex items-center justify-center flex-col text-center">
-    <div className="max-w-4xl mx-auto">
-      <Badge className="mb-4 bg-primary/10 text-white border-primary/20">
-        Transparent • Secure • Democratic
-      </Badge>
+          {/* Ethiopian flag gradient overlay (top-left green, center yellow, bottom-right red) */}
+          <div className="absolute inset-0 pointer-events-none" aria-hidden>
+            <div
+              className="absolute inset-0"
+              style={{
+                background:
+                  "linear-gradient(120deg, rgba(10,138,59,0.18) 0%, rgba(242,201,76,0.14) 45%, rgba(224,59,45,0.16) 100%)",
+                mixBlendMode: "overlay",
+              }}
+            />
+            {/* subtle decorative sash */}
+            <svg
+              className="absolute -left-20 -top-10 opacity-12 w-96 h-96"
+              viewBox="0 0 600 600"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path d="M600 0C450 100 300 100 0 600V0H600Z" fill="#F2C94C" />
+            </svg>
+          </div>
 
-      <h1 className="text-5xl md:text-6xl font-extrabold mb-6 bg-gradient-to-r from-primary to-accent bg-clip-text text-white">
-        Your Voice, Your Vote at Shaggar Institute of Technology
-      </h1>
+          {/* content */}
+          <div className="relative z-10 max-w-5xl mx-auto px-6 py-20 md:py-28 lg:py-32 flex flex-col items-center text-center">
+            <Badge className="mb-4 bg-white/10 text-white border-white/20 px-4 py-1 rounded-full text-sm">
+              Transparent • Secure • Democratic
+            </Badge>
 
-      <p className="text-xl text-white mb-8 max-w-2xl mx-auto">
-        Participate in the Shaggar Institute of Technology’s Student Council Elections. Vote with confidence on a secure and transparent platform.
-      </p>
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight mt-4 bg-clip-text text-white">
+              <span className="inline-block">Your Voice, Your Vote</span>
+              <br />
+              <span className="text-[#F2C94C]">
+                Shaggar Institute of Technology
+              </span>
+            </h1>
 
-      <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
-        <Button size="lg" className="w-full sm:w-auto transition-all hover:scale-105" onClick={handleGetStarted}>
-          <Vote className="mr-2 h-5 w-5" />
-          {isAuthenticated ? "Go to Dashboard" : "Get Started"}
-        </Button>
+            <p className="mt-4 max-w-2xl text-sm sm:text-base text-white/90">
+              Participate in the Student Council Elections on a secure,
+              accessible, and transparent platform built for students.
+            </p>
 
-        {!isAuthenticated && (
-          <Button size="lg" variant="outline" className="w-full sm:w-auto transition-all hover:scale-105" onClick={() => navigate("/auth")}>
-            Login to Vote
-          </Button>
-        )}
-      </div>
+            <div className="mt-8 flex flex-col sm:flex-row gap-3 sm:gap-4 w-full sm:w-auto justify-center">
+              <Button
+                size="lg"
+                className="bg-[#0a8a3b] hover:bg-[#0a7a35] border-transparent text-white shadow-lg flex items-center gap-2 px-6 py-3"
+                onClick={handleGetStarted}
+              >
+                <Vote className="h-5 w-5" />
+                {isAuthenticated ? "Go to Dashboard" : "Get Started"}
+              </Button>
 
-      {activeElections > 0 && (
-        <div className="inline-flex items-center gap-2 bg-success-light text-success px-4 py-2 rounded-full">
-          <CheckCircle2 className="h-4 w-4" />
-          <span className="font-medium">{activeElections} Active Student Council Election{activeElections !== 1 ? 's' : ''}</span>
+              {!isAuthenticated && (
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="border-yellow-300 text-yellow-300 hover:bg-white/5 px-6 py-3"
+                  onClick={() => navigate("/auth")}
+                >
+                  Login to Vote
+                </Button>
+              )}
+            </div>
+
+            <div className="mt-6 flex flex-col sm:flex-row items-center gap-3">
+              <div className="inline-flex items-center gap-2 bg-white/6 px-4 py-2 rounded-full border border-white/6">
+                <CheckCircle2 className="h-4 w-4 text-[#0a8a3b]" />
+                <span className="text-sm">
+                  {activeElections} Active Election
+                  {activeElections !== 1 ? "s" : ""}
+                </span>
+              </div>
+
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/4 border border-white/6">
+                <Shield className="h-4 w-4 text-[#F2C94C]" />
+                <span className="text-sm">End-to-end Privacy</span>
+              </div>
+            </div>
+
+            {loading && (
+              <p className="mt-4 text-sm text-white/70">Loading...</p>
+            )}
+            {error && <p className="mt-4 text-sm text-red-400">{error}</p>}
+          </div>
+
+          {/* Hero bottom rounded panel */}
+          <div className="absolute bottom-0 left-0 right-0">
+            <div className="h-12 md:h-16 bg-gradient-to-b from-transparent to-[#0b1216]" />
+          </div>
         </div>
-      )}
+      </section>
 
-      {loading && <p className="text-white mt-4">Loading...</p>}
-      {error && <p className="text-red-500 mt-4">{error}</p>}
-    </div>
-
-    {/* Scroll Indicator */}
-    <div className="absolute bottom-10 left-1/2 transform -translate-x-1/2 text-white cursor-pointer">
-      
-      <div className="mt-2 animate-bounce">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="w-6 h-6 text-white">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7 7 7-7" />
-        </svg>
-      </div>
-    </div>
-  </div>
-</section>
-
-
-      {/* Features Section */}
-      <section className="py-20 bg-[#232A2D]">
+      {/* Features */}
+      <section className="py-16 bg-[#0b1216]">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-white mb-4">Why Choose Our Election Platform?</h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
-              Our platform is built with security, transparency, and accessibility at its core to ensure a seamless experience for all students.
+          <div className="max-w-3xl mx-auto text-center mb-10">
+            <h2 className="text-2xl md:text-3xl font-bold text-white">
+              Why choose our platform?
+            </h2>
+            <p className="mt-3 text-sm text-white/80">
+              Built with local context and international best practices to
+              ensure every vote counts.
             </p>
           </div>
 
-          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4 max-w-6xl mx-auto">
-            <Card className="border-2 hover:border-primary transition-all transform hover:scale-105 text-white">
-              <CardHeader>
-                <Shield className="h-10 w-10 text-primary mb-2" />
-                <CardTitle>Secure Voting</CardTitle>
-                <CardDescription>
-                  End-to-end encryption and device verification ensure your vote remains safe and confidential.
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+            <Card className="bg-[#071017] border border-white/6 p-4 hover:scale-105 transition-transform">
+              <CardHeader className="flex flex-col items-start gap-2">
+                <div className="p-3 rounded-md bg-[#0a8a3b]/10 text-[#0a8a3b]">
+                  <Shield className="h-6 w-6" />
+                </div>
+                <CardTitle className="text-lg text-white">
+                  Secure Voting
+                </CardTitle>
+                <CardDescription className="text-sm text-white/80">
+                  End-to-end encryption and verification keep every ballot
+                  private and authentic.
                 </CardDescription>
               </CardHeader>
             </Card>
 
-            <Card className="border-2 hover:border-primary transition-all transform hover:scale-105 text-white">
-              <CardHeader>
-                <Vote className="h-10 w-10 text-primary mb-2" />
-                <CardTitle>Easy Voting</CardTitle>
-                <CardDescription>
-                  Our intuitive interface makes it simple for all students to cast their votes in the Student Council Election.
+            <Card className="bg-[#071017] border border-white/6 p-4 hover:scale-105 transition-transform">
+              <CardHeader className="flex flex-col items-start gap-2">
+                <div className="p-3 rounded-md bg-[#F2C94C]/10 text-[#F2C94C]">
+                  <Vote className="h-6 w-6" />
+                </div>
+                <CardTitle className="text-lg text-white">
+                  Easy to Use
+                </CardTitle>
+                <CardDescription className="text-sm text-white/80">
+                  A simple, accessible interface designed for all students
+                  across devices.
                 </CardDescription>
               </CardHeader>
             </Card>
 
-            <Card className="border-2 hover:border-primary transition-all transform hover:scale-105 text-white p-4 pt-6">
-              <TrendingUp className="h-10 w-10 text-primary mb-2" />
-              <CardTitle>Real-time Results</CardTitle>
-              <CardDescription>
-                Stay updated with live election results as the votes are counted transparently.
-              </CardDescription>
+            <Card className="bg-[#071017] border border-white/6 p-4 hover:scale-105 transition-transform">
+              <CardHeader className="flex flex-col items-start gap-2">
+                <div className="p-3 rounded-md bg-[#e03b2d]/10 text-[#e03b2d]">
+                  <TrendingUp className="h-6 w-6" />
+                </div>
+                <CardTitle className="text-lg text-white">
+                  Live Results
+                </CardTitle>
+                <CardDescription className="text-sm text-white/80">
+                  Transparent result updates so the community can follow the
+                  count in real time.
+                </CardDescription>
+              </CardHeader>
             </Card>
 
-            <Card className="border-2 hover:border-primary transition-all transform hover:scale-105 text-white  p-4 pt-6">
-              <Users className="h-10 w-10 text-primary mb-2" />
-              <CardTitle>Candidate Profiles</CardTitle>
-              <CardDescription>
-                Get to know the candidates running for the Student Council with their profiles and manifestos.
-              </CardDescription>
+            <Card className="bg-[#071017] border border-white/6 p-4 hover:scale-105 transition-transform">
+              <CardHeader className="flex flex-col items-start gap-2">
+                <div className="p-3 rounded-md bg-[#0a8a3b]/10 text-[#0a8a3b]">
+                  <Users className="h-6 w-6" />
+                </div>
+                <CardTitle className="text-lg text-white">
+                  Candidate Profiles
+                </CardTitle>
+                <CardDescription className="text-sm text-white/80">
+                  Read candidate statements and manifestos before casting your
+                  ballot.
+                </CardDescription>
+              </CardHeader>
             </Card>
           </div>
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-20 bg-[#232A2D]">
-        <div className="container mx-auto px-4 text-center text-white">
-          <h2 className="text-3xl font-bold mb-4">Ready to Make Your Voice Heard?</h2>
-          <p className="mb-8 max-w-2xl mx-auto">
-            Join thousands of students at Shaggar Institute of Technology in choosing the next Student Council leaders. Trust our platform for a secure and transparent voting process.
-          </p>
-          <Button size="lg" variant="secondary" className="transition-all hover:scale-105" onClick={handleGetStarted}>
-            {isAuthenticated ? "Go to Dashboard" : "Register Now"}
-          </Button>
+      {/* CTA */}
+      <section className="py-14 bg-gradient-to-b from-[#071017] to-[#091013]">
+        <div className="container mx-auto px-4 text-center">
+          <div className="max-w-3xl mx-auto">
+            <h3 className="text-2xl md:text-3xl font-bold mb-3">
+              Ready to make your voice heard?
+            </h3>
+            <p className="text-sm text-white/80 mb-6">
+              Join students across Shaggar Institute of Technology on a secure,
+              locally-minded voting platform.
+            </p>
+
+            <div className="flex justify-center gap-3 flex-wrap">
+              <Button
+                size="lg"
+                className="bg-[#0a8a3b] hover:bg-[#0a7a35] px-6 py-3 text-white"
+                onClick={handleGetStarted}
+              >
+                {isAuthenticated ? "Go to Dashboard" : "Register Now"}
+              </Button>
+            </div>
+          </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="border-t py-8 bg-[#181C1F]">
-        <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-          <p>© 2025 Shaggar Institute of Technology Student Council Elections. All rights reserved.</p>
-          <p className="mt-2">Built with security and transparency in mind.</p>
+      <footer className="border-t border-white/6 py-6 bg-[#061014]">
+        <div className="container mx-auto px-4 text-center text-sm text-white/70">
+          <div className="max-w-3xl mx-auto space-y-2">
+            <p>
+              © {new Date().getFullYear()} Shaggar Institute of Technology
+              Student Council Elections.
+            </p>
+            <p>Built with security, accessibility, and transparency in mind.</p>
+            <div className="mt-2 flex items-center justify-center gap-3">
+              <span className="inline-block w-4 h-4 rounded-full bg-[#0a8a3b]" />
+              <span className="inline-block w-4 h-4 rounded-full bg-[#F2C94C]" />
+              <span className="inline-block w-4 h-4 rounded-full bg-[#e03b2d]" />
+            </div>
+          </div>
         </div>
       </footer>
     </div>
