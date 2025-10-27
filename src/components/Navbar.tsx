@@ -136,7 +136,13 @@ const Navbar: React.FC = () => {
                 >
                   Vote
                 </Link>
-
+                <Link
+                  to="/candidate/my-candidacy"
+                  className="text-sm font-medium text-slate-700 hover:text-slate-900 dark:text-slate-200"
+                  onClick={closeMobileMenu}
+                >
+                  My Candidacy
+                </Link>
                 <Link
                   to="/voter/profile"
                   className="text-sm font-medium text-slate-700 hover:text-slate-900 dark:text-slate-200"
