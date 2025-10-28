@@ -198,7 +198,7 @@ const RegisteredVote = () => {
           election_id: election.id,
           position_id: positionId,
           candidate_id: candidateId,
-          fingerprint: fingerprint,
+          device_fingerprint: fingerprint,
         },
       ]);
 
