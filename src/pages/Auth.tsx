@@ -231,7 +231,7 @@ const Auth = () => {
             </TabsContent>
 
             <TabsContent value="signup">
-              {/*<form onSubmit={handleSignup} className="space-y-4 mt-4">
+              <form onSubmit={handleSignup} className="space-y-4 mt-4">
                 <div className="space-y-2">
                   <Label htmlFor="signup-name">Full Name</Label>
                   <Input
@@ -308,16 +308,16 @@ const Auth = () => {
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? "Creating account..." : "Create Account"}
                 </Button>
-              </form>*/}
+              </form>
 
-              <div className="space-y-2 p-6 flex flex-col justify-center items-center column">
+             {/* <div className="space-y-2 p-6 flex flex-col justify-center items-center column">
                 <p>⚠️⚠️⚠️</p>
 
                 <p>
                   Registration has been closed. Please contact election
                   committee for more information.
                 </p>
-              </div>
+              </div>*/} 
             </TabsContent>
           </Tabs>
           <div className="mt-6 flex items-center gap-2 text-sm text-muted-foreground">
