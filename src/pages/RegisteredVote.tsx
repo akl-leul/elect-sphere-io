@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import FingerprintJS from "@fingerprintjs/fingerprintjs";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
@@ -52,9 +53,22 @@ const RegisteredVote = () => {
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<any>(null);
   const [isSuspended, setIsSuspended] = useState(false);
+  const [fingerprint, setFingerprint] = useState<string | null>(null);
 
   useEffect(() => {
+    const getFingerprint = async () => {
+      try {
+        const fp = await FingerprintJS.load();
+        const { visitorId } = await fp.get();
+        setFingerprint(visitorId);
+      } catch (error) {
+        console.error("Error getting fingerprint:", error);
+        toast.error("Could not verify device. Please try again.");
+      }
+    };
+
     fetchData();
+    getFingerprint();
   }, []);
 
   useEffect(() => {
@@ -160,6 +174,13 @@ const RegisteredVote = () => {
         return;
       }
 
+      if (!fingerprint) {
+        toast.error(
+          "Device could not be verified. Please refresh and try again.",
+        );
+        return;
+      }
+
       const {
         data: { user },
       } = await supabase.auth.getUser();
@@ -177,6 +198,7 @@ const RegisteredVote = () => {
           election_id: election.id,
           position_id: positionId,
           candidate_id: candidateId,
+          fingerprint: fingerprint,
         },
       ]);
 
