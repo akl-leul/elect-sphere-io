@@ -131,10 +131,10 @@ const Analytics = () => {
       if (candidateIds.length) {
         const { data: candidateRows } = await supabase
           .from("candidates")
-          .select("id, name")
+          .select("id, profiles:user_id (full_name)")
           .in("id", candidateIds);
         candidatesById = (candidateRows || []).reduce((acc, c) => {
-          acc[c.id] = c.name || `Candidate ${c.id}`;
+          acc[c.id] = c.profiles?.full_name || `Candidate ${c.id}`;
           return acc;
         }, {});
       }
